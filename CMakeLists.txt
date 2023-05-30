@@ -25,5 +25,5 @@ add_executable(${PROJECT_NAME} ${SOURCES})
 target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
 
 target_include_directories(${PROJECT_NAME} PUBLIC
-    vendor/spdlog/include
+    engine/vendor/spdlog/include
 )
