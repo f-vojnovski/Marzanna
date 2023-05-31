@@ -4,7 +4,6 @@
 class TestApplication : public mz::Application {
 public:
 	TestApplication() {
-		//MZ_INFO("Application class inherited properly!");
 	}
 	~TestApplication() {
 

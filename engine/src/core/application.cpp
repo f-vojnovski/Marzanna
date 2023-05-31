@@ -3,13 +3,13 @@
 namespace mz {
 	Application::Application()
 	{
+		MZ_CORE_INFO("Running Marzanna engine...");
 	}
 	Application::~Application()
 	{
 	}
 	bool Application::Run()
 	{
-		mz::Log::GetCoreLogger()->trace("Running Marzanna engine...");
 
 		while (m_isRunning) {
 		}
