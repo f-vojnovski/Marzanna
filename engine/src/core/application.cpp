@@ -31,10 +31,11 @@ namespace mz {
 	void Application::OnEvent(Event& e)
 	{
 		EventDispatcher dispatcher(e);
-		//dispatcher.Dispatch<WindowCloseEvent>(BIND_EVENT_FN(OnWindowClose));
-		//dispatcher.Dispatch<WindowResizeEvent>(BIND_EVENT_FN(OnWindowResize));
-
-		// TODO: Perhaps log event here?
+		dispatcher.Dispatch<WindowCloseEvent>(BIND_EVENT_FN(OnWindowClose));
+		dispatcher.Dispatch<WindowResizeEvent>(BIND_EVENT_FN(OnWindowResize));
+		
+		// Uncomment to log events 
+		// MZ_CORE_TRACE("{0}", e.ToString());
 	}
 
 	bool Application::OnWindowClose(WindowCloseEvent& e)

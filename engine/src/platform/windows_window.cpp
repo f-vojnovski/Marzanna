@@ -34,7 +34,7 @@ namespace mz {
 		m_data.width = props.width;
 		m_data.height = props.height;
 
-		MZ_CORE_INFO("Creating window {0}, ({1}x{2})", props.title, props.width, props.height);
+		MZ_CORE_INFO("Creating window {0} ({1}x{2})", props.title, props.width, props.height);
 
 		if (!s_GLFWInitialized)
 		{
@@ -47,9 +47,9 @@ namespace mz {
 
 		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 		m_window = glfwCreateWindow((int)props.width, (int)props.height, m_data.title.c_str(), nullptr, nullptr);
-		glfwMakeContextCurrent(m_window);
+		//glfwMakeContextCurrent(m_window);
 		glfwSetWindowUserPointer(m_window, &m_data);
-		SetVSync(true);
+		//SetVSync(true);
 
 		// Set GLFW callbacks
 		glfwSetWindowSizeCallback(m_window, [](GLFWwindow* window, int width, int height)
@@ -142,7 +142,7 @@ namespace mz {
 	void WindowsWindow::OnUpdate()
 	{
 		glfwPollEvents();
-		glfwSwapBuffers(m_window);
+		//glfwSwapBuffers(m_window);
 	}
 
 	void WindowsWindow::SetVSync(bool enabled)
