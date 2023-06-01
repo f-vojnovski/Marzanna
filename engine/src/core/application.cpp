@@ -5,7 +5,7 @@ namespace mz {
 
 	Application::Application()
 	{
-		MZ_CORE_INFO("Running Marzanna engine...");
+		MZ_CORE_TRACE("Running Marzanna engine...");
 	
 		MZ_CORE_TRACE("Creating window...");
 		m_window = std::unique_ptr<Window>(Window::Create());
@@ -16,10 +16,12 @@ namespace mz {
 	}
 	bool Application::Run()
 	{
-
-
 		while (m_isRunning) {
 			m_window->OnUpdate();
+
+			for (Layer* layer : m_layerStack) {
+				layer->OnUpdate();
+			}
 		}
 
 		return true;
@@ -34,6 +36,13 @@ namespace mz {
 		dispatcher.Dispatch<WindowCloseEvent>(BIND_EVENT_FN(OnWindowClose));
 		dispatcher.Dispatch<WindowResizeEvent>(BIND_EVENT_FN(OnWindowResize));
 		
+		for (auto it = m_layerStack.end(); it != m_layerStack.begin();) {
+			(*--it)->OnEvent(e);
+			if (e.Handled) {
+				break;
+			}
+		}
+
 		// Uncomment to log events 
 		// MZ_CORE_TRACE("{0}", e.ToString());
 	}
@@ -47,5 +56,15 @@ namespace mz {
 	bool Application::OnWindowResize(WindowResizeEvent& e) {
 		
 		return false;
+	}
+	
+	void Application::PushLayer(Layer* layer)
+	{
+		m_layerStack.PushLayer(layer);
+	}
+
+	void Application::PushOverlay(Layer* overlay)
+	{
+		m_layerStack.PushOverlay(overlay);
 	}
 }

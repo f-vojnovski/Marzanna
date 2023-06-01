@@ -3,6 +3,7 @@
 #include "engine/src/mzpch.h"
 #include "events/application_event.h"
 #include "engine/src/platform/windows_window.h"
+#include "engine/src/core/layer_stack.h"
 
 namespace mz {
 	class Application {
@@ -13,6 +14,9 @@ namespace mz {
 		void Shutdown();
 
 		void OnEvent(Event& e);
+
+		void PushLayer(Layer* layer);
+		void PushOverlay(Layer* overlay);
 	private:
 		bool m_isRunning = true;
 		bool m_isSuspended = false;
@@ -23,6 +27,8 @@ namespace mz {
 
 		bool OnWindowClose(WindowCloseEvent& e);
 		bool OnWindowResize(WindowResizeEvent& e);
+	
+		LayerStack m_layerStack;
 	};
 
 	// Defined in client

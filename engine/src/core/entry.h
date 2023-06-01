@@ -5,9 +5,10 @@
 
 int main(int argc, char** argv) {
 	mz::Log::Init();
-	mz::Application* app = new mz::Application();
+	mz::Application* app = mz::CreateApplication();
 
 	app->Run();
+
 	delete app;
 
 	return 0;
