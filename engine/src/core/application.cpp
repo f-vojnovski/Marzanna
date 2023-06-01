@@ -5,7 +5,7 @@ namespace mz {
 
 	Application::Application()
 	{
-		MZ_CORE_TRACE("Running Marzanna engine...");
+		MZ_CORE_INFO("Running Marzanna engine...");
 	
 		MZ_CORE_TRACE("Creating window...");
 		m_window = std::unique_ptr<Window>(Window::Create());
