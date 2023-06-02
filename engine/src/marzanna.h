@@ -13,3 +13,7 @@
 #include "core/layer.cpp"
 #include "core/layer_stack.h"
 #include "core/layer_stack.cpp"
+#include "core/input.h"
+#include "platform/windows_input.h"
+#include "platform/windows_input.cpp"
+#include "core/input_keycodes.h"

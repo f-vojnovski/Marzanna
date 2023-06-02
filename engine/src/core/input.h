@@ -13,7 +13,7 @@ namespace mz {
 		inline virtual std::pair<float, float> GetMousePositionImpl() = 0;
 
 	public:
-		inline static bool IsKeyPressed(int keycode) { return s_Instance->IsKeyPressed(keycode); }
+		inline static bool IsKeyPressed(int keycode) { return s_Instance->IsKeyPressedImpl(keycode); }
 		inline static bool IsMouseButtonPressed(int button) { return s_Instance->IsMouseButtonPressedImpl(button); }
 		inline static std::pair<float, float> GetMousePosition() { return s_Instance->GetMousePosition(); }
 	};
