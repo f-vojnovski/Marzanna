@@ -20,6 +20,8 @@ ENDMACRO(ADD_MSVC_PRECOMPILED_HEADER)
 
 project(MarzannaDemo LANGUAGES CXX)
 
+find_package(Vulkan REQUIRED)
+
 add_subdirectory(engine/vendor/glfw)
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
@@ -47,9 +49,13 @@ target_include_directories(demo PRIVATE
     engine/vendor/glfw/include
     engine/vendor/glm/glm
     "${PROJECT_SOURCE_DIR}"
+    ${Vulkan_INCLUDE_DIRS}
 )
 
-target_link_libraries(demo PRIVATE glfw)
+target_link_libraries(demo PRIVATE
+    glfw
+    ${Vulkan_LIBRARIES}
+)
 
 add_subdirectory("engine")
 
