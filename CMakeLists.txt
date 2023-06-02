@@ -45,6 +45,7 @@ target_sources(demo PRIVATE "demo.cpp")
 target_include_directories(demo PRIVATE 
     engine/vendor/spdlog/include 
     engine/vendor/glfw/include
+    engine/vendor/glm/glm
     "${PROJECT_SOURCE_DIR}"
 )
 
