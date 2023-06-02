@@ -6,11 +6,11 @@ public:
 	ExampleLayer() : Layer("example") {}
 
 	void OnUpdate() override {
-		MZ_INFO("Example Layer OnUpdate()");
+		//MZ_INFO("Example Layer OnUpdate()");
 	}
 
 	void OnEvent(mz::Event& e) override {
-		MZ_INFO("Example Layer OnEvent(e)");
+		//MZ_INFO("Example Layer OnEvent(e)");
 	}
 };
 

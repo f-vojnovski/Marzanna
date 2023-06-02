@@ -17,6 +17,10 @@ namespace mz {
 
 		void PushLayer(Layer* layer);
 		void PushOverlay(Layer* overlay);
+
+		inline static Application& Get() { return *s_Instance; }
+
+		inline Window& GetWindow() { return *m_window; }
 	private:
 		bool m_isRunning = true;
 		bool m_isSuspended = false;
@@ -29,6 +33,8 @@ namespace mz {
 		bool OnWindowResize(WindowResizeEvent& e);
 	
 		LayerStack m_layerStack;
+
+		static Application* s_Instance;
 	};
 
 	// Defined in client

@@ -1,7 +1,10 @@
 #include "application.h"
+#include "engine/src/asserts.h"
 
 namespace mz {
 	#define BIND_EVENT_FN(x) std::bind(&Application::x, this, std::placeholders::_1)
+
+	Application* Application::s_Instance = nullptr;
 
 	Application::Application()
 	{
@@ -10,6 +13,9 @@ namespace mz {
 		MZ_CORE_TRACE("Creating window...");
 		m_window = std::unique_ptr<Window>(Window::Create());
 		m_window->SetEventCallback(BIND_EVENT_FN(OnEvent));
+
+		MZ_ASSERT(!s_Instance, "Application already exists!");
+		s_Instance = this;
 	}
 	Application::~Application()
 	{
@@ -61,10 +67,12 @@ namespace mz {
 	void Application::PushLayer(Layer* layer)
 	{
 		m_layerStack.PushLayer(layer);
+		layer->OnAttach();
 	}
 
 	void Application::PushOverlay(Layer* overlay)
 	{
 		m_layerStack.PushOverlay(overlay);
+		overlay->OnAttach();
 	}
 }
