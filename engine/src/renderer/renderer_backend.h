@@ -18,6 +18,7 @@ namespace mz {
 		virtual void Shutdown() = 0;
 		virtual bool BeginFrame() = 0;
 		virtual bool EndFrame() = 0;
+		bool CheckValidationLayerSupport();
 		inline virtual ~RendererBackend() {}
 	};
 }

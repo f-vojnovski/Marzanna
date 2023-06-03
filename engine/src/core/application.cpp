@@ -9,9 +9,7 @@ namespace mz {
 
 	Application::Application()
 	{
-		MZ_CORE_INFO("Running Marzanna engine...");
-	
-		MZ_CORE_TRACE("Creating window...");
+		MZ_CORE_INFO("Running Marzanna engine...");	
 		m_window = std::unique_ptr<Window>(Window::Create());
 		m_window->SetEventCallback(BIND_EVENT_FN(OnEvent));
 
@@ -38,10 +36,12 @@ namespace mz {
 			}
 		}
 
+		Shutdown();
 		return true;
 	}
 	void Application::Shutdown()
 	{
+		m_renderApi->Shutdown();
 	}
 
 	void Application::OnEvent(Event& e)

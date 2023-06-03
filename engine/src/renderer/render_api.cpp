@@ -24,7 +24,7 @@ namespace mz {
 	}
 
 	void RenderAPI::Shutdown() {
-		
+		m_rendererBackend->Shutdown();
 	}
 	
 	void RenderAPI::OnResized(const uint16_t width, const uint16_t height) {
