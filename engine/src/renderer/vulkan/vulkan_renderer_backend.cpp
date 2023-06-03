@@ -123,6 +123,11 @@ namespace mz {
 		MZ_ASSERT_MSG(func, "Failed to create debug messenger!");
 		VK_CHECK(func(m_instance, &debugCreateInfo, m_allocator, &m_debugMessegner));
 		MZ_CORE_INFO("Vulkan debugger created.");
+
+		// Physical device & surface
+		if (!m_device.SelectPhysicalDevice(m_instance)) {
+			MZ_CORE_CRITICAL("Failed to select physical device!");
+		}
 	}
 
 	VKAPI_ATTR VkBool32 VKAPI_CALL VulkanRendererBackend::VulkanDebugCallback(

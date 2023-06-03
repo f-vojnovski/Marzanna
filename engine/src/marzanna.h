@@ -27,3 +27,5 @@
 #include "renderer/vulkan/vulkan_utils.h"
 #include "renderer/vulkan/vulkan_utils.cpp"
 #include "renderer/vulkan/vulkan_platform.h"
+#include "renderer/vulkan/vulkan_device.h"
+#include "renderer/vulkan/vulkan_device.cpp"

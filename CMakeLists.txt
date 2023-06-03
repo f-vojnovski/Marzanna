@@ -19,6 +19,7 @@ MACRO(ADD_MSVC_PRECOMPILED_HEADER PrecompiledHeader PrecompiledSource SourcesVar
 ENDMACRO(ADD_MSVC_PRECOMPILED_HEADER)
 
 project(MarzannaDemo LANGUAGES CXX)
+set(CMAKE_CXX_STANDARD 17)  # Set minimum C++17 requirement
 
 find_package(Vulkan REQUIRED)
 
