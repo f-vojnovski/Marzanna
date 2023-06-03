@@ -4,6 +4,7 @@
 #include "events/application_event.h"
 #include "engine/src/platform/windows_window.h"
 #include "engine/src/core/layer_stack.h"
+#include "engine/src/renderer/render_api.h"
 
 namespace mz {
 	class Application {
@@ -33,6 +34,8 @@ namespace mz {
 		bool OnWindowResize(WindowResizeEvent& e);
 	
 		LayerStack m_layerStack;
+
+		std::unique_ptr<RenderAPI> m_renderApi;
 
 		static Application* s_Instance;
 	};

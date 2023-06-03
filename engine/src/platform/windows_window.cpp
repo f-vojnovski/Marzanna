@@ -46,6 +46,7 @@ namespace mz {
 		}
 
 		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+		glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 		m_window = glfwCreateWindow((int)props.width, (int)props.height, m_data.title.c_str(), nullptr, nullptr);
 		//glfwMakeContextCurrent(m_window);
 		glfwSetWindowUserPointer(m_window, &m_data);

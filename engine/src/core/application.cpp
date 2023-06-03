@@ -1,5 +1,6 @@
 #include "application.h"
 #include "engine/src/asserts.h"
+#include "engine/src/renderer/render_api.h"
 
 namespace mz {
 	#define BIND_EVENT_FN(x) std::bind(&Application::x, this, std::placeholders::_1)
@@ -14,15 +15,22 @@ namespace mz {
 		m_window = std::unique_ptr<Window>(Window::Create());
 		m_window->SetEventCallback(BIND_EVENT_FN(OnEvent));
 
+		RenderApiArgs args = { "Marzanna application", m_window.get() };
+		m_renderApi = std::make_unique<RenderAPI>(args);
+
 		MZ_ASSERT(!s_Instance, "Application already exists!");
 		s_Instance = this;
 	}
+
 	Application::~Application()
 	{
 	}
+
 	bool Application::Run()
 	{
 		while (m_isRunning) {
+			if (m_isSuspended) continue;
+
 			m_window->OnUpdate();
 
 			for (Layer* layer : m_layerStack) {

@@ -17,3 +17,8 @@
 #include "platform/windows_input.h"
 #include "platform/windows_input.cpp"
 #include "core/input_keycodes.h"
+#include "renderer/renderer_backend.h"
+#include "renderer/render_api.h"
+#include "renderer/render_api.cpp"
+#include "renderer/vulkan/vulkan_renderer_backend.h"
+#include "renderer/vulkan/vulkan_renderer_backend.cpp"
