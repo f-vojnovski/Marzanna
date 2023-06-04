@@ -58,6 +58,36 @@ target_link_libraries(demo PRIVATE
     ${Vulkan_LIBRARIES}
 )
 
-add_subdirectory("engine")
+# Shaders compilation
+file(GLOB_RECURSE SHADER_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders/*.glsl")
 
-install(TARGETS demo)
+find_program(GLSL_VALIDATOR glslangValidator HINTS 
+  ${Vulkan_GLSLANG_VALIDATOR_EXECUTABLE} 
+  /usr/bin 
+  /usr/local/bin 
+  ${VULKAN_SDK_PATH}/Bin
+  ${VULKAN_SDK_PATH}/Bin32
+  $ENV{VULKAN_SDK}/Bin/ 
+  $ENV{VULKAN_SDK}/Bin32/
+)
+
+foreach(GLSL ${SHADER_SOURCES})  # Correct variable name
+  get_filename_component(FILE_NAME ${GLSL} NAME)
+  set(SPIRV "${PROJECT_BINARY_DIR}/assets/shaders/${FILE_NAME}.spv")
+  add_custom_command(
+    OUTPUT ${SPIRV}
+    COMMAND ${GLSL_VALIDATOR} -V ${GLSL} -o ${SPIRV}
+    DEPENDS ${GLSL})
+  list(APPEND SPIRV_BINARY_FILES ${SPIRV})
+endforeach()
+
+add_custom_target(
+    Shaders
+    DEPENDS ${SPIRV_BINARY_FILES}
+)
+
+add_dependencies(demo Shaders)  # Add Shaders target as a dependency of demo target
+
+# TODO: Enable in production only
+# add_subdirectory("engine")
+# install(TARGETS demo)
