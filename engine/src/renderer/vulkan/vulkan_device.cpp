@@ -2,7 +2,7 @@
 #include "engine/src/core/log.h"
 
 namespace mz {
-	bool VulkanDevice::SelectPhysicalDevice(VkInstance& instance)
+	bool VulkanDevice::SelectPhysicalDevice(VkInstance instance, VkSurfaceKHR surface)
 	{
 		MZ_CORE_TRACE("Selecting physical device...");
 
@@ -19,7 +19,7 @@ namespace mz {
 
 		// TODO: Use score system
 		for (const auto& device : devices) {
-			QueueFamilyIndices indices = FindQueueFamilies(device);
+			QueueFamilyIndices indices = FindQueueFamilies(device, surface);
 
 			if (IsDeviceSuitable(device, indices)) {
 				m_physicalDevice = device;
@@ -75,7 +75,7 @@ namespace mz {
 		vkDestroyDevice(m_device, allocator);
 	}
 	
-	QueueFamilyIndices VulkanDevice::FindQueueFamilies(VkPhysicalDevice device)
+	QueueFamilyIndices VulkanDevice::FindQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surface)
 	{
 		QueueFamilyIndices indices;
 
@@ -89,6 +89,13 @@ namespace mz {
 		for (const auto& queueFamily : queueFamilies) {
 			if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
 				indices.graphicsFamily = i;
+			}
+
+			VkBool32 presentSupport = false;
+			vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
+
+			if (presentSupport) {
+				indices.presentFamily = i;
 			}
 
 			if (indices.isComplete()) {

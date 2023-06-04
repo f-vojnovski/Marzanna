@@ -102,7 +102,7 @@ namespace mz {
 		MZ_CORE_INFO("Vulkan surface created successfully!");
 
 		// Device creation
-		if (!m_device.SelectPhysicalDevice(m_instance)) {
+		if (!m_device.SelectPhysicalDevice(m_instance, m_surface)) {
 			MZ_CORE_CRITICAL("Failed to select physical device!");
 			return false;
 		}
