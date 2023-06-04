@@ -8,7 +8,7 @@
 namespace mz {
 	void PlatformGetRequiredExtensionNames(std::vector<const char*>& extensionNames);
 
-	bool PlatformCreateVulkanSurface(VkInstance instance, Window* window, VkAllocationCallbacks* allocator, VkSurfaceKHR* outSurface);
+	bool PlatformCreateVulkanSurface(VkInstance instance, const Window* window, VkAllocationCallbacks* allocator, VkSurfaceKHR* outSurface);
 }
 
 #endif

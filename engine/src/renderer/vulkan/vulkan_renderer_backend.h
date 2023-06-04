@@ -3,6 +3,7 @@
 #include "engine/src/mzpch.h"
 #include "engine/src/renderer/renderer_backend.h"
 #include "vulkan_device.h"
+#include "engine/src/core/window.h"
 
 namespace mz {
 	class VulkanRendererBackend : public RendererBackend {
@@ -19,7 +20,10 @@ namespace mz {
 		VkDebugUtilsMessengerEXT m_debugMessegner;
 		VulkanDevice m_device;
 		std::vector<const char*> m_validationLayers;
-		bool CreateInstance();
+		VkSurfaceKHR m_surface;
+
+		const Window* m_window;
+
 		static VKAPI_ATTR VkBool32 VKAPI_CALL VulkanDebugCallback(
 			VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
 			VkDebugUtilsMessageTypeFlagsEXT message_types,

@@ -7,39 +7,10 @@ namespace mz {
 		m_name = args.name;
 		m_window = args.window;
 		m_allocator = nullptr;
-
-		CreateInstance();
+		m_window = args.window;
 	}
 
 	bool VulkanRendererBackend::Initialize()
-	{
-		return false;
-	}
-	
-	void VulkanRendererBackend::Shutdown()
-	{
-		MZ_CORE_TRACE("Destroying Vulkan debugger...");
-		if (m_debugMessegner) {
-			PFN_vkDestroyDebugUtilsMessengerEXT func =
-				(PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(m_instance, "vkDestroyDebugUtilsMessengerEXT");
-			func(m_instance, m_debugMessegner, m_allocator);
-		}
-
-		MZ_CORE_TRACE("Destroying Vulkan instance...");
-		vkDestroyInstance(m_instance, m_allocator);
-	}
-	
-	bool VulkanRendererBackend::BeginFrame()
-	{
-		return false;
-	}
-	
-	bool VulkanRendererBackend::EndFrame()
-	{
-		return false;
-	}
-	
-	bool VulkanRendererBackend::CreateInstance()
 	{
 		MZ_CORE_TRACE("Creating Vulkan instance...");
 
@@ -75,23 +46,23 @@ namespace mz {
 		VK_CHECK(vkEnumerateInstanceLayerProperties(&availableLayerCount, nullptr));
 		std::vector<VkLayerProperties> availableLayers(availableLayerCount);
 		VK_CHECK(vkEnumerateInstanceLayerProperties(&availableLayerCount, availableLayers.data()))
-		for (const char* layerName : m_validationLayers) {
-			MZ_CORE_TRACE("Searching for validation layer {0}", layerName);
-			bool layerFound = false;
-			for (const auto& layerProperties : availableLayers) {
-				if (strcmp(layerName, layerProperties.layerName) == 0) {
-					MZ_CORE_TRACE("Found");
-					
-					layerFound = true;
-					break;
+			for (const char* layerName : m_validationLayers) {
+				MZ_CORE_TRACE("Searching for validation layer {0}", layerName);
+				bool layerFound = false;
+				for (const auto& layerProperties : availableLayers) {
+					if (strcmp(layerName, layerProperties.layerName) == 0) {
+						MZ_CORE_TRACE("Found");
+
+						layerFound = true;
+						break;
+					}
+				}
+
+				if (!layerFound) {
+					MZ_CORE_ERROR("Required validation layer is missing: {0}", layerName);
+					return false;
 				}
 			}
-
-			if (!layerFound) {
-				MZ_CORE_ERROR("Required validation layer is missing: {0}", layerName);
-				return false;
-			}
-		}
 
 		VkInstanceCreateInfo createInfo = { VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO };
 		createInfo.pApplicationInfo = &appInfo;
@@ -122,7 +93,15 @@ namespace mz {
 		VK_CHECK(func(m_instance, &debugCreateInfo, m_allocator, &m_debugMessegner));
 		MZ_CORE_INFO("Vulkan debugger created.");
 
-		// Physical device & surface
+		// Surface creation
+		MZ_CORE_TRACE("Creating Vulkan surface...");
+		if (!PlatformCreateVulkanSurface(m_instance, m_window, m_allocator, &m_surface)) {
+			MZ_CORE_CRITICAL("Surface creation failed!");
+			return false;
+		}
+		MZ_CORE_INFO("Vulkan surface created successfully!");
+
+		// Device creation
 		if (!m_device.SelectPhysicalDevice(m_instance)) {
 			MZ_CORE_CRITICAL("Failed to select physical device!");
 			return false;
@@ -134,6 +113,29 @@ namespace mz {
 		}
 
 		return true;
+	}
+	
+	void VulkanRendererBackend::Shutdown()
+	{
+		MZ_CORE_TRACE("Destroying Vulkan debugger...");
+		if (m_debugMessegner) {
+			PFN_vkDestroyDebugUtilsMessengerEXT func =
+				(PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(m_instance, "vkDestroyDebugUtilsMessengerEXT");
+			func(m_instance, m_debugMessegner, m_allocator);
+		}
+
+		MZ_CORE_TRACE("Destroying Vulkan instance...");
+		vkDestroyInstance(m_instance, m_allocator);
+	}
+	
+	bool VulkanRendererBackend::BeginFrame()
+	{
+		return false;
+	}
+	
+	bool VulkanRendererBackend::EndFrame()
+	{
+		return false;
 	}
 
 	VKAPI_ATTR VkBool32 VKAPI_CALL VulkanRendererBackend::VulkanDebugCallback(

@@ -7,7 +7,7 @@ namespace mz {
 	void PlatformGetRequiredExtensionNames(std::vector<const char*>& extensionNames) {
 		extensionNames.push_back("VK_KHR_win32_surface");
 	}
-	bool PlatformCreateVulkanSurface(VkInstance instance, Window* window, VkAllocationCallbacks* allocator, VkSurfaceKHR* outSurface)
+	bool PlatformCreateVulkanSurface(VkInstance instance, const Window* window, VkAllocationCallbacks* allocator, VkSurfaceKHR* outSurface)
 	{
 		auto glfwWindow = static_cast<GLFWwindow*>(window->GetNativeWindow());
 		VkResult result = glfwCreateWindowSurface(instance, glfwWindow, allocator, outSurface);

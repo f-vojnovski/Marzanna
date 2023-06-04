@@ -16,6 +16,8 @@ namespace mz {
 		RenderApiArgs args = { "Marzanna application", m_window.get() };
 		m_renderApi = std::make_unique<RenderAPI>(args);
 
+		m_renderApi->Initialize();
+
 		MZ_ASSERT(!s_Instance, "Application already exists!");
 		s_Instance = this;
 	}

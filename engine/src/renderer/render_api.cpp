@@ -1,5 +1,6 @@
 #include "render_api.h"
 #include "vulkan/vulkan_renderer_backend.h"
+#include "engine/src/core/log.h"
 
 namespace mz {
 	RenderAPI::RenderAPI(const RenderApiArgs args) {
@@ -20,6 +21,12 @@ namespace mz {
 	}
 
 	bool RenderAPI::Initialize() {
+		MZ_CORE_TRACE("Creating renderer backend...");
+		if (!m_rendererBackend->Initialize()) {
+			MZ_CORE_CRITICAL("Renderer backend creation failed!");
+			return false;
+		}
+		MZ_CORE_INFO("Created renderer backend!");
 		return true;
 	}
 
