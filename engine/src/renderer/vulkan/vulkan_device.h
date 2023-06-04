@@ -19,6 +19,9 @@ namespace mz {
 
 		QueueFamilyIndices m_queueFamilyIndices;
 
+		VkQueue m_graphicsQueue;
+		VkQueue m_presentQueue;
+
 		static bool IsDeviceSuitable(VkPhysicalDevice device, QueueFamilyIndices indices);
 		static QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surface);
 	public:

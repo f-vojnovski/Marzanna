@@ -17,7 +17,6 @@ namespace mz {
 		std::vector<VkPhysicalDevice> devices(deviceCount);
 		vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
 
-		// TODO: Use score system
 		for (const auto& device : devices) {
 			QueueFamilyIndices indices = FindQueueFamilies(device, surface);
 
@@ -37,22 +36,28 @@ namespace mz {
 		return true;
 	}
 
-	bool VulkanDevice::CreateLogicalDevice(const std::vector<const char*> validationLayers, VkAllocationCallbacks* allocator) {
-		VkDeviceQueueCreateInfo queueCreateInfo{};
-		queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-		queueCreateInfo.queueFamilyIndex = m_queueFamilyIndices.graphicsFamily.value();
-		queueCreateInfo.queueCount = 1;
+	bool VulkanDevice::CreateLogicalDevice(const std::vector<const char*> validationLayers, VkAllocationCallbacks* allocator) 
+	{
+		std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
+		std::set<uint32_t> uniqueQueueFamilies = { m_queueFamilyIndices.graphicsFamily.value(), m_queueFamilyIndices.presentFamily.value() };
 
 		float queuePriority = 1.0f;
-		queueCreateInfo.pQueuePriorities = &queuePriority;
+		for (uint32_t queueFamily : uniqueQueueFamilies) {
+			VkDeviceQueueCreateInfo queueCreateInfo{};
+			queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+			queueCreateInfo.queueFamilyIndex = queueFamily;
+			queueCreateInfo.queueCount = 1;
+			queueCreateInfo.pQueuePriorities = &queuePriority;
+			queueCreateInfos.push_back(queueCreateInfo);
+		}
 
 		VkPhysicalDeviceFeatures deviceFeatures{};
 		
 		VkDeviceCreateInfo createInfo{};
 		createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
 
-		createInfo.pQueueCreateInfos = &queueCreateInfo;
-		createInfo.queueCreateInfoCount = 1;
+		createInfo.pQueueCreateInfos = queueCreateInfos.data();
+		createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());;
 
 		createInfo.pEnabledFeatures = &deviceFeatures;
 
@@ -62,12 +67,17 @@ namespace mz {
 		if (vkCreateDevice(m_physicalDevice, &createInfo, allocator, &m_device) != VK_SUCCESS) {
 			return false;
 		}
+
+		vkGetDeviceQueue(m_device, m_queueFamilyIndices.graphicsFamily.value(), 0, &m_graphicsQueue);
+		vkGetDeviceQueue(m_device, m_queueFamilyIndices.presentFamily.value(), 0, &m_presentQueue);
 	}
 
 	VulkanDevice::VulkanDevice()
 	{
 		m_physicalDevice = VK_NULL_HANDLE;
 		m_device = VK_NULL_HANDLE;
+		m_presentQueue = VK_NULL_HANDLE;
+		m_graphicsQueue = VK_NULL_HANDLE;
 	}
 
 	void VulkanDevice::Shutdown(VkAllocationCallbacks* allocator) {
