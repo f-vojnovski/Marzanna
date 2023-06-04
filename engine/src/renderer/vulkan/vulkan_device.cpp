@@ -71,6 +71,7 @@ namespace mz {
 	}
 
 	void VulkanDevice::Shutdown(VkAllocationCallbacks* allocator) {
+		MZ_CORE_TRACE("Destroying device...");
 		vkDestroyDevice(m_device, allocator);
 	}
 	

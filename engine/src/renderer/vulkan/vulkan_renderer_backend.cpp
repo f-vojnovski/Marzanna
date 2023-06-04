@@ -124,6 +124,11 @@ namespace mz {
 			func(m_instance, m_debugMessegner, m_allocator);
 		}
 
+		m_device.Shutdown(m_allocator);
+
+		MZ_CORE_TRACE("Destroying surface...");
+		vkDestroySurfaceKHR(m_instance, m_surface, m_allocator);
+
 		MZ_CORE_TRACE("Destroying Vulkan instance...");
 		vkDestroyInstance(m_instance, m_allocator);
 	}
