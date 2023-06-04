@@ -129,6 +129,7 @@ namespace mz {
 				(PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(m_instance, "vkDestroyDebugUtilsMessengerEXT");
 			func(m_instance, m_debugMessegner, m_allocator);
 		}
+		m_swapChain->Destroy(m_allocator);
 
 		m_device->Shutdown(m_allocator);
 

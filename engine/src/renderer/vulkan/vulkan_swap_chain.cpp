@@ -10,6 +10,8 @@ namespace mz {
 
 	void VulkanSwapChain::Create()
 	{
+		MZ_CORE_TRACE("Creating swap chain...");
+
 		ChooseSurfaceFormat(m_swapChainSupportDetails.formats);
 		ChoosePresentMode(m_swapChainSupportDetails.presentModes);
 		ChooseExtent(m_swapChainSupportDetails.capabilities);
@@ -51,14 +53,21 @@ namespace mz {
 
 		createInfo.oldSwapchain = VK_NULL_HANDLE;
 
-		if (vkCreateSwapchainKHR(m_device, &createInfo, nullptr, &swapChain) != VK_SUCCESS) {
+		if (vkCreateSwapchainKHR(m_device, &createInfo, nullptr, &m_swapChain) != VK_SUCCESS) {
 			MZ_CORE_ERROR("Failed to create swap chain!");
+			return;
 		}
+
+		vkGetSwapchainImagesKHR(m_device, m_swapChain, &m_imageCount, nullptr);
+		m_images.resize(m_imageCount);
+		vkGetSwapchainImagesKHR(m_device, m_swapChain, &m_imageCount, m_images.data());
+
+		MZ_CORE_INFO("Swap chain created!");
 	}
 	
 	void VulkanSwapChain::Destroy(VkAllocationCallbacks* allocator)
 	{
-		vkDestroySwapchainKHR(m_device, swapChain, allocator);
+		vkDestroySwapchainKHR(m_device, m_swapChain, allocator);
 	}
 
 	void VulkanSwapChain::ChooseSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats)

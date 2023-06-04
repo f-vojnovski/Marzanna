@@ -11,9 +11,10 @@ namespace mz {
 		VkExtent2D m_extent;
 		uint32_t m_imageCount;
 
-
-		VkSwapchainKHR swapChain;
+		VkSwapchainKHR m_swapChain;
 		
+		std::vector<VkImage> m_images;
+
 		VkSurfaceKHR m_surface;
 		SwapChainSupportDetails& m_swapChainSupportDetails;
 		QueueFamilyIndices& m_queueFamilyIndices;
