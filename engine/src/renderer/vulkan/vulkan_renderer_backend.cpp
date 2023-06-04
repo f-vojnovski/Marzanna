@@ -102,12 +102,14 @@ namespace mz {
 		MZ_CORE_INFO("Vulkan surface created successfully!");
 
 		// Device creation
-		if (!m_device.SelectPhysicalDevice(m_instance, m_surface)) {
+		m_device = std::make_unique<VulkanDevice>(m_surface);
+		
+		if (!m_device->SelectPhysicalDevice(m_instance)) {
 			MZ_CORE_CRITICAL("Failed to select physical device!");
 			return false;
 		}
 
-		if (!m_device.CreateLogicalDevice(m_validationLayers, m_allocator)) {
+		if (!m_device->CreateLogicalDevice(m_validationLayers, m_allocator)) {
 			MZ_CORE_CRITICAL("Failed to create Vulkan logical device!");
 			return false;
 		}
@@ -124,7 +126,7 @@ namespace mz {
 			func(m_instance, m_debugMessegner, m_allocator);
 		}
 
-		m_device.Shutdown(m_allocator);
+		m_device->Shutdown(m_allocator);
 
 		MZ_CORE_TRACE("Destroying surface...");
 		vkDestroySurfaceKHR(m_instance, m_surface, m_allocator);

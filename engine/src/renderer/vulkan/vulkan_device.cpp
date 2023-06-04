@@ -2,7 +2,7 @@
 #include "engine/src/core/log.h"
 
 namespace mz {
-	bool VulkanDevice::SelectPhysicalDevice(VkInstance instance, VkSurfaceKHR surface)
+	bool VulkanDevice::SelectPhysicalDevice(VkInstance instance)
 	{
 		MZ_CORE_TRACE("Selecting physical device...");
 
@@ -18,17 +18,18 @@ namespace mz {
 		vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
 
 		for (const auto& device : devices) {
-			QueueFamilyIndices indices = FindQueueFamilies(device, surface);
+			QueueFamilyIndices indices = FindQueueFamilies(device, m_surface);
+			SwapChainSupportDetails swapChainSupportDetails = QuerySwapChainSupport(device, m_surface);
 
-			if (IsDeviceSuitable(device, indices)) {
+			if (IsDeviceSuitable(device, indices, swapChainSupportDetails)) {
 				m_physicalDevice = device;
 				m_queueFamilyIndices = indices;
+				m_swapChainSupportDetails = swapChainSupportDetails;
 				break;
 			}
 		}
 
 		if (m_physicalDevice == VK_NULL_HANDLE) {
-			MZ_CORE_CRITICAL("Failed to find suitable physical device!");
 			return false;
 		}
 
@@ -66,6 +67,9 @@ namespace mz {
 		createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
 		createInfo.ppEnabledLayerNames = validationLayers.data();
 
+		createInfo.enabledExtensionCount = static_cast<uint32_t>(s_requiredDeviceExtensions.size());
+		createInfo.ppEnabledExtensionNames = s_requiredDeviceExtensions.data();
+
 		if (vkCreateDevice(m_physicalDevice, &createInfo, allocator, &m_device) != VK_SUCCESS) {
 			return false;
 		}
@@ -76,12 +80,38 @@ namespace mz {
 		MZ_CORE_INFO("Created logical device!");
 	}
 
-	VulkanDevice::VulkanDevice()
+	VulkanDevice::VulkanDevice(VkSurfaceKHR surface)
 	{
 		m_physicalDevice = VK_NULL_HANDLE;
 		m_device = VK_NULL_HANDLE;
 		m_presentQueue = VK_NULL_HANDLE;
 		m_graphicsQueue = VK_NULL_HANDLE;
+		m_surface = surface;
+	}
+
+	SwapChainSupportDetails VulkanDevice::QuerySwapChainSupport(VkPhysicalDevice device, VkSurfaceKHR surface)
+	{
+		SwapChainSupportDetails details;
+
+		vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &details.capabilities);
+
+		uint32_t formatCount;
+		vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, nullptr);
+
+		if (formatCount != 0) {
+			details.formats.resize(formatCount);
+			vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, details.formats.data());
+		}
+
+		uint32_t presentModeCount;
+		vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, nullptr);
+
+		if (presentModeCount != 0) {
+			details.presentModes.resize(presentModeCount);
+			vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, details.presentModes.data());
+		}
+
+		return details;
 	}
 
 	void VulkanDevice::Shutdown(VkAllocationCallbacks* allocator) {
@@ -121,7 +151,7 @@ namespace mz {
 		return indices;
 	}
 
-	bool VulkanDevice::IsDeviceSuitable(VkPhysicalDevice device, QueueFamilyIndices indices) {
+	bool VulkanDevice::IsDeviceSuitable(VkPhysicalDevice device, QueueFamilyIndices indices, SwapChainSupportDetails swapChainDetails) {
 		if (!indices.isComplete()) {
 			return false;
 		}
@@ -136,5 +166,31 @@ namespace mz {
 			!deviceFeatures.geometryShader) {
 			return false;
 		}
+
+		if (!CheckDeviceExtensionSupport(device)) {
+			return false;
+		}
+
+		if (swapChainDetails.formats.empty() || swapChainDetails.presentModes.empty()) {
+			return false;
+		}
+
+		return true;
+	}
+
+	bool VulkanDevice::CheckDeviceExtensionSupport(VkPhysicalDevice device) {
+		uint32_t extensionCount;
+		vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
+
+		std::vector<VkExtensionProperties> availableExtensions(extensionCount);
+		vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, availableExtensions.data());
+
+		std::set<std::string> requiredExtensions(s_requiredDeviceExtensions.begin(), s_requiredDeviceExtensions.end());
+
+		for (const auto& extension : availableExtensions) {
+			requiredExtensions.erase(extension.extensionName);
+		}
+
+		return requiredExtensions.empty();
 	}
 }

@@ -12,6 +12,12 @@ namespace mz {
 		}
 	};
 
+	struct SwapChainSupportDetails {
+		VkSurfaceCapabilitiesKHR capabilities;
+		std::vector<VkSurfaceFormatKHR> formats;
+		std::vector<VkPresentModeKHR> presentModes;
+	};
+
 	class VulkanDevice {
 	private:
 		VkPhysicalDevice m_physicalDevice;
@@ -22,12 +28,22 @@ namespace mz {
 		VkQueue m_graphicsQueue;
 		VkQueue m_presentQueue;
 
-		static bool IsDeviceSuitable(VkPhysicalDevice device, QueueFamilyIndices indices);
+		SwapChainSupportDetails m_swapChainSupportDetails;
+
+		VkSurfaceKHR m_surface;
+
 		static QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surface);
+		static bool IsDeviceSuitable(VkPhysicalDevice device, QueueFamilyIndices indices, SwapChainSupportDetails swapChainDetails);
+		static bool CheckDeviceExtensionSupport(VkPhysicalDevice device);
+		static SwapChainSupportDetails QuerySwapChainSupport(VkPhysicalDevice device, VkSurfaceKHR surface);
 	public:
-		bool SelectPhysicalDevice(VkInstance instance, VkSurfaceKHR surface);
+		static const std::vector<const char*> s_requiredDeviceExtensions;
+		
+		bool SelectPhysicalDevice(VkInstance instance);
 		bool CreateLogicalDevice(const std::vector<const char*> validationLayers, VkAllocationCallbacks* allocator);
 		void Shutdown(VkAllocationCallbacks* allocator);
-		VulkanDevice();
+		VulkanDevice(VkSurfaceKHR surface);
 	};
+
+	const std::vector<const char*> VulkanDevice::s_requiredDeviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
 }
