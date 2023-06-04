@@ -43,6 +43,10 @@ namespace mz {
 		bool CreateLogicalDevice(const std::vector<const char*> validationLayers, VkAllocationCallbacks* allocator);
 		void Shutdown(VkAllocationCallbacks* allocator);
 		VulkanDevice(VkSurfaceKHR surface);
+
+		inline SwapChainSupportDetails& GetSwapChainSupportDetails() { return m_swapChainSupportDetails; }
+		inline QueueFamilyIndices& GetQueueFamilyIndices() { return m_queueFamilyIndices; }
+		inline VkDevice GetLogicalDevice() { return m_device; }
 	};
 
 	const std::vector<const char*> VulkanDevice::s_requiredDeviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };

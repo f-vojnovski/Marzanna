@@ -78,6 +78,7 @@ namespace mz {
 		vkGetDeviceQueue(m_device, m_queueFamilyIndices.presentFamily.value(), 0, &m_presentQueue);
 
 		MZ_CORE_INFO("Created logical device!");
+		return true;
 	}
 
 	VulkanDevice::VulkanDevice(VkSurfaceKHR surface)

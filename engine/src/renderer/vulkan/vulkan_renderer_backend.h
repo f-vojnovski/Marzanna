@@ -3,6 +3,7 @@
 #include "engine/src/mzpch.h"
 #include "engine/src/renderer/renderer_backend.h"
 #include "vulkan_device.h"
+#include "vulkan_swap_chain.h"
 #include "engine/src/core/window.h"
 
 namespace mz {
@@ -19,6 +20,7 @@ namespace mz {
 		VkAllocationCallbacks* m_allocator;
 		VkDebugUtilsMessengerEXT m_debugMessegner;
 		std::unique_ptr<VulkanDevice> m_device;
+		std::unique_ptr<VulkanSwapChain> m_swapChain;
 		std::vector<const char*> m_validationLayers;
 		VkSurfaceKHR m_surface;
 

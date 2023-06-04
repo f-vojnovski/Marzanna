@@ -29,3 +29,5 @@
 #include "renderer/vulkan/vulkan_platform.h"
 #include "renderer/vulkan/vulkan_device.h"
 #include "renderer/vulkan/vulkan_device.cpp"
+#include "renderer/vulkan/vulkan_swap_chain.h"
+#include "renderer/vulkan/vulkan_swap_chain.cpp"
