@@ -38,6 +38,8 @@ namespace mz {
 
 	bool VulkanDevice::CreateLogicalDevice(const std::vector<const char*> validationLayers, VkAllocationCallbacks* allocator) 
 	{
+		MZ_CORE_TRACE("Creating logical device...");
+
 		std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
 		std::set<uint32_t> uniqueQueueFamilies = { m_queueFamilyIndices.graphicsFamily.value(), m_queueFamilyIndices.presentFamily.value() };
 
@@ -70,6 +72,8 @@ namespace mz {
 
 		vkGetDeviceQueue(m_device, m_queueFamilyIndices.graphicsFamily.value(), 0, &m_graphicsQueue);
 		vkGetDeviceQueue(m_device, m_queueFamilyIndices.presentFamily.value(), 0, &m_presentQueue);
+
+		MZ_CORE_INFO("Created logical device!");
 	}
 
 	VulkanDevice::VulkanDevice()
