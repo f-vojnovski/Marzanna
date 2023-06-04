@@ -19,7 +19,8 @@ MACRO(ADD_MSVC_PRECOMPILED_HEADER PrecompiledHeader PrecompiledSource SourcesVar
 ENDMACRO(ADD_MSVC_PRECOMPILED_HEADER)
 
 project(MarzannaDemo LANGUAGES CXX)
-set(CMAKE_CXX_STANDARD 17)  # Set minimum C++17 requirement
+
+set(CMAKE_CXX_STANDARD 17)
 
 find_package(Vulkan REQUIRED)
 
@@ -71,22 +72,22 @@ find_program(GLSL_VALIDATOR glslangValidator HINTS
   $ENV{VULKAN_SDK}/Bin32/
 )
 
-foreach(GLSL ${SHADER_SOURCES})  # Correct variable name
+foreach(GLSL ${SHADER_SOURCES})                                         # Iterate over all shader files
   get_filename_component(FILE_NAME ${GLSL} NAME)
-  set(SPIRV "${PROJECT_BINARY_DIR}/assets/shaders/${FILE_NAME}.spv")
+  set(SPIRV "${PROJECT_BINARY_DIR}/assets/shaders/${FILE_NAME}.spv")    # Output path for compiled shader
   add_custom_command(
-    OUTPUT ${SPIRV}
-    COMMAND ${GLSL_VALIDATOR} -V ${GLSL} -o ${SPIRV}
-    DEPENDS ${GLSL})
-  list(APPEND SPIRV_BINARY_FILES ${SPIRV})
+    OUTPUT ${SPIRV}                                                     # Specify the output file
+    COMMAND ${GLSL_VALIDATOR} -V ${GLSL} -o ${SPIRV}                    # Command to compile the shader
+    DEPENDS ${GLSL})                                                    # Specify the dependency on the shader source file
+  list(APPEND SPIRV_BINARY_FILES ${SPIRV})                              # Collect compiled shader files
 endforeach()
 
 add_custom_target(
     Shaders
-    DEPENDS ${SPIRV_BINARY_FILES}
+    DEPENDS ${SPIRV_BINARY_FILES}                                       # Specify the dependencies for the Shaders target
 )
 
-add_dependencies(demo Shaders)  # Add Shaders target as a dependency of demo target
+add_dependencies(demo Shaders)                                          # Add Shaders target as a dependency of the demo target
 
 # TODO: Enable in production only
 # add_subdirectory("engine")
