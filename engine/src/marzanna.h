@@ -31,3 +31,5 @@
 #include "renderer/vulkan/vulkan_device.cpp"
 #include "renderer/vulkan/vulkan_swap_chain.h"
 #include "renderer/vulkan/vulkan_swap_chain.cpp"
+#include "system/FileReader.h"
+#include "system/FileReader.cpp"
