@@ -1,4 +1,5 @@
 #include "vulkan_swap_chain.h"
+#include "vulkan_utils.h"
 
 namespace mz {
 	VulkanSwapChain::VulkanSwapChain(VkSurfaceKHR surface, VkDevice device, SwapChainSupportDetails& swapChainSupportDetails, QueueFamilyIndices& queueFamilyIndices)
@@ -62,12 +63,45 @@ namespace mz {
 		m_images.resize(m_imageCount);
 		vkGetSwapchainImagesKHR(m_device, m_swapChain, &m_imageCount, m_images.data());
 
+		CreateImageViews();
+
 		MZ_CORE_INFO("Swap chain created!");
 	}
 	
 	void VulkanSwapChain::Destroy(VkAllocationCallbacks* allocator)
 	{
+		for (auto imageView : m_imageViews) {
+			vkDestroyImageView(m_device, imageView, allocator);
+		}
+
 		vkDestroySwapchainKHR(m_device, m_swapChain, allocator);
+	}
+
+	void VulkanSwapChain::CreateImageViews()
+	{
+		m_imageViews.resize(m_images.size());
+
+		for (size_t i = 0; i < m_images.size(); i++) {
+			VkImageViewCreateInfo createInfo{};
+			createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+			createInfo.image = m_images[i];
+
+			createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+			createInfo.format = m_surfaceFormat.format;
+
+			createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+			createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+			createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+			createInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+
+			createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+			createInfo.subresourceRange.baseMipLevel = 0;
+			createInfo.subresourceRange.levelCount = 1;
+			createInfo.subresourceRange.baseArrayLayer = 0;
+			createInfo.subresourceRange.layerCount = 1;
+
+			VK_CHECK(vkCreateImageView(m_device, &createInfo, nullptr, &m_imageViews[i]));
+		}
 	}
 
 	void VulkanSwapChain::ChooseSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats)

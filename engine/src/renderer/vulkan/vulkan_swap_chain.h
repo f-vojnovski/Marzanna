@@ -15,6 +15,8 @@ namespace mz {
 		
 		std::vector<VkImage> m_images;
 
+		std::vector<VkImageView> m_imageViews;
+
 		VkSurfaceKHR m_surface;
 		SwapChainSupportDetails& m_swapChainSupportDetails;
 		QueueFamilyIndices& m_queueFamilyIndices;
@@ -27,5 +29,6 @@ namespace mz {
 		void Create();
 		void Destroy(VkAllocationCallbacks* allocator = nullptr);
 		VulkanSwapChain(VkSurfaceKHR surface, VkDevice device, SwapChainSupportDetails& swapChainSupportDetails, QueueFamilyIndices& queueFamilyIndices);
+		void CreateImageViews();
 	};
 }
