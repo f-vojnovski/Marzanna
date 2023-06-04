@@ -18,6 +18,7 @@ namespace mz {
 		VkAllocationCallbacks* m_allocator;
 		VkDebugUtilsMessengerEXT m_debugMessegner;
 		VulkanDevice m_device;
+		std::vector<const char*> m_validationLayers;
 		bool CreateInstance();
 		static VKAPI_ATTR VkBool32 VKAPI_CALL VulkanDebugCallback(
 			VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,

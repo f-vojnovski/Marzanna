@@ -14,11 +14,16 @@ namespace mz {
 	class VulkanDevice {
 	private:
 		VkPhysicalDevice m_physicalDevice;
+		VkDevice m_device;
 
-		static bool IsDeviceSuitable(VkPhysicalDevice device);
-		QueueFamilyIndices FindQueueFamilies();
+		QueueFamilyIndices m_queueFamilyIndices;
+
+		static bool IsDeviceSuitable(VkPhysicalDevice device, QueueFamilyIndices indices);
+		static QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device);
 	public:
 		bool SelectPhysicalDevice(VkInstance& instance);
+		bool CreateLogicalDevice(const std::vector<const char*> validationLayers, VkAllocationCallbacks* allocator);
+		void Shutdown(VkAllocationCallbacks* allocator);
 		VulkanDevice();
 	};
 }

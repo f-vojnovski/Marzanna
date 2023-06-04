@@ -68,16 +68,14 @@ namespace mz {
 
 		// Vulkan validation layers
 		// Non-release builds
-		std::vector<const char*> validationLayerNames;
-
 		MZ_CORE_INFO("Validation layers enabled. Enumerating...");
-		validationLayerNames.push_back("VK_LAYER_KHRONOS_validation");
+		m_validationLayers.push_back("VK_LAYER_KHRONOS_validation");
 
 		uint32_t availableLayerCount = 0;
 		VK_CHECK(vkEnumerateInstanceLayerProperties(&availableLayerCount, nullptr));
 		std::vector<VkLayerProperties> availableLayers(availableLayerCount);
 		VK_CHECK(vkEnumerateInstanceLayerProperties(&availableLayerCount, availableLayers.data()))
-		for (const char* layerName : validationLayerNames) {
+		for (const char* layerName : m_validationLayers) {
 			MZ_CORE_TRACE("Searching for validation layer {0}", layerName);
 			bool layerFound = false;
 			for (const auto& layerProperties : availableLayers) {
@@ -99,8 +97,8 @@ namespace mz {
 		createInfo.pApplicationInfo = &appInfo;
 		createInfo.enabledExtensionCount = static_cast<uint32_t>(requiredExtensions.size());
 		createInfo.ppEnabledExtensionNames = requiredExtensions.data();
-		createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayerNames.size());
-		createInfo.ppEnabledLayerNames = validationLayerNames.data();
+		createInfo.enabledLayerCount = static_cast<uint32_t>(m_validationLayers.size());
+		createInfo.ppEnabledLayerNames = m_validationLayers.data();
 
 		VK_CHECK(vkCreateInstance(&createInfo, m_allocator, &m_instance));
 
@@ -127,7 +125,15 @@ namespace mz {
 		// Physical device & surface
 		if (!m_device.SelectPhysicalDevice(m_instance)) {
 			MZ_CORE_CRITICAL("Failed to select physical device!");
+			return false;
 		}
+
+		if (!m_device.CreateLogicalDevice(m_validationLayers, m_allocator)) {
+			MZ_CORE_CRITICAL("Failed to create Vulkan logical device!");
+			return false;
+		}
+
+		return true;
 	}
 
 	VKAPI_ATTR VkBool32 VKAPI_CALL VulkanRendererBackend::VulkanDebugCallback(

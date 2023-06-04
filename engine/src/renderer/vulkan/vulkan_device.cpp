@@ -19,8 +19,11 @@ namespace mz {
 
 		// TODO: Use score system
 		for (const auto& device : devices) {
-			if (IsDeviceSuitable(device)) {
+			QueueFamilyIndices indices = FindQueueFamilies(device);
+
+			if (IsDeviceSuitable(device, indices)) {
 				m_physicalDevice = device;
+				m_queueFamilyIndices = indices;
 				break;
 			}
 		}
@@ -31,23 +34,55 @@ namespace mz {
 		}
 
 		MZ_CORE_INFO("Physical device selected!");
+		return true;
+	}
+
+	bool VulkanDevice::CreateLogicalDevice(const std::vector<const char*> validationLayers, VkAllocationCallbacks* allocator) {
+		VkDeviceQueueCreateInfo queueCreateInfo{};
+		queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+		queueCreateInfo.queueFamilyIndex = m_queueFamilyIndices.graphicsFamily.value();
+		queueCreateInfo.queueCount = 1;
+
+		float queuePriority = 1.0f;
+		queueCreateInfo.pQueuePriorities = &queuePriority;
+
+		VkPhysicalDeviceFeatures deviceFeatures{};
+		
+		VkDeviceCreateInfo createInfo{};
+		createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+
+		createInfo.pQueueCreateInfos = &queueCreateInfo;
+		createInfo.queueCreateInfoCount = 1;
+
+		createInfo.pEnabledFeatures = &deviceFeatures;
+
+		createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
+		createInfo.ppEnabledLayerNames = validationLayers.data();
+
+		if (vkCreateDevice(m_physicalDevice, &createInfo, allocator, &m_device) != VK_SUCCESS) {
+			return false;
+		}
 	}
 
 	VulkanDevice::VulkanDevice()
 	{
 		m_physicalDevice = VK_NULL_HANDLE;
+		m_device = VK_NULL_HANDLE;
 	}
 
+	void VulkanDevice::Shutdown(VkAllocationCallbacks* allocator) {
+		vkDestroyDevice(m_device, allocator);
+	}
 	
-	QueueFamilyIndices VulkanDevice::FindQueueFamilies()
+	QueueFamilyIndices VulkanDevice::FindQueueFamilies(VkPhysicalDevice device)
 	{
 		QueueFamilyIndices indices;
 
 		uint32_t queueFamilyCount = 0;
-		vkGetPhysicalDeviceQueueFamilyProperties(m_physicalDevice, &queueFamilyCount, nullptr);
+		vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
 
 		std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
-		vkGetPhysicalDeviceQueueFamilyProperties(m_physicalDevice, &queueFamilyCount, queueFamilies.data());
+		vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
 
 		int i = 0;
 		for (const auto& queueFamily : queueFamilies) {
@@ -64,14 +99,20 @@ namespace mz {
 		return indices;
 	}
 
-	bool VulkanDevice::IsDeviceSuitable(VkPhysicalDevice device) {
+	bool VulkanDevice::IsDeviceSuitable(VkPhysicalDevice device, QueueFamilyIndices indices) {
+		if (!indices.isComplete()) {
+			return false;
+		}
+		
 		VkPhysicalDeviceProperties deviceProperties;
 		vkGetPhysicalDeviceProperties(device, &deviceProperties);
 		
 		VkPhysicalDeviceFeatures deviceFeatures;
 		vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
 
-		return deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU &&
-			deviceFeatures.geometryShader;
+		if (!deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU ||
+			!deviceFeatures.geometryShader) {
+			return false;
+		}
 	}
 }
