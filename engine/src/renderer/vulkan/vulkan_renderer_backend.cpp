@@ -118,23 +118,33 @@ namespace mz {
 		m_swapChain = std::make_unique<VulkanSwapChain>(m_surface, m_device->GetLogicalDevice(), m_device->GetSwapChainSupportDetails(), m_device->GetQueueFamilyIndices());
 		m_swapChain->Create();
 
+		// Pipeline creation
+		m_pipeline = std::make_unique<VulkanPipeline>(m_device->GetLogicalDevice());
+		if (!m_pipeline->Create()) {
+			MZ_CORE_CRITICAL("Failed to create Vulkan graphics pipeline!");
+			return false;
+		}
+
 		return true;
 	}
 	
 	void VulkanRendererBackend::Shutdown()
 	{
-		MZ_CORE_TRACE("Destroying Vulkan debugger...");
-		if (m_debugMessegner) {
-			PFN_vkDestroyDebugUtilsMessengerEXT func =
-				(PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(m_instance, "vkDestroyDebugUtilsMessengerEXT");
-			func(m_instance, m_debugMessegner, m_allocator);
-		}
+		m_pipeline->Destroy(m_allocator);
+
 		m_swapChain->Destroy(m_allocator);
 
 		m_device->Shutdown(m_allocator);
 
 		MZ_CORE_TRACE("Destroying surface...");
 		vkDestroySurfaceKHR(m_instance, m_surface, m_allocator);
+
+		MZ_CORE_TRACE("Destroying Vulkan debugger...");
+		if (m_debugMessegner) {
+			PFN_vkDestroyDebugUtilsMessengerEXT func =
+				(PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(m_instance, "vkDestroyDebugUtilsMessengerEXT");
+			func(m_instance, m_debugMessegner, m_allocator);
+		}
 
 		MZ_CORE_TRACE("Destroying Vulkan instance...");
 		vkDestroyInstance(m_instance, m_allocator);

@@ -2,9 +2,10 @@
 
 #include "engine/src/mzpch.h"
 #include "engine/src/renderer/renderer_backend.h"
+#include "engine/src/core/window.h"
 #include "vulkan_device.h"
 #include "vulkan_swap_chain.h"
-#include "engine/src/core/window.h"
+#include "vulkan_pipeline.h"
 
 namespace mz {
 	class VulkanRendererBackend : public RendererBackend {
@@ -21,6 +22,7 @@ namespace mz {
 		VkDebugUtilsMessengerEXT m_debugMessegner;
 		std::unique_ptr<VulkanDevice> m_device;
 		std::unique_ptr<VulkanSwapChain> m_swapChain;
+		std::unique_ptr<VulkanPipeline> m_pipeline;
 		std::vector<const char*> m_validationLayers;
 		VkSurfaceKHR m_surface;
 

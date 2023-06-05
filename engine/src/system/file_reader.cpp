@@ -1,8 +1,8 @@
-#include "FileReader.h"
+#include "file_reader.h"
 
 namespace mz
 {
-	std::vector<char> ReadFile(const std::string& filename)
+	std::vector<char> EngineReadFile(const std::string& filename)
 	{
         std::ifstream file(filename, std::ios::ate | std::ios::binary);
 

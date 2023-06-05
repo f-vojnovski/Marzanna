@@ -12,7 +12,7 @@ MACRO(ADD_MSVC_PRECOMPILED_HEADER PrecompiledHeader PrecompiledSource SourcesVar
                                            OBJECT_OUTPUTS "${PrecompiledBinary}")
     SET_SOURCE_FILES_PROPERTIES(${Sources}
                                 PROPERTIES COMPILE_FLAGS "/Yu\"${PrecompiledHeader}\" /FI\"${PrecompiledHeader}\" /Fp\"${PrecompiledBinary}\""
-                                           OBJECT_DEPENDS "${PrecompiledBinary}")  
+                                           OBJECT_DEPENDS "${PrecompiledBinary}")
     # Add precompiled header to SourcesVar
     LIST(APPEND ${SourcesVar} ${PrecompiledSource})
   ENDIF(MSVC)
@@ -59,9 +59,12 @@ target_link_libraries(demo PRIVATE
     ${Vulkan_LIBRARIES}
 )
 
-# Shaders compilation
+# Compile shaders
+
+# Find all shader files
 file(GLOB_RECURSE SHADER_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders/*.glsl")
 
+# Find glslangValidator program
 find_program(GLSL_VALIDATOR glslangValidator HINTS 
   ${Vulkan_GLSLANG_VALIDATOR_EXECUTABLE} 
   /usr/bin 
@@ -72,22 +75,27 @@ find_program(GLSL_VALIDATOR glslangValidator HINTS
   $ENV{VULKAN_SDK}/Bin32/
 )
 
-foreach(GLSL ${SHADER_SOURCES})                                         # Iterate over all shader files
+# Iterate over all shader files & add custom command for compiling shaders for each file
+foreach(GLSL ${SHADER_SOURCES})
   get_filename_component(FILE_NAME ${GLSL} NAME)
-  set(SPIRV "${PROJECT_BINARY_DIR}/assets/shaders/${FILE_NAME}.spv")    # Output path for compiled shader
+  string(REPLACE ".glsl" "" FILE_NAME_WE ${FILE_NAME})
+
+  set(SPIRV "${PROJECT_BINARY_DIR}/assets/shaders/${FILE_NAME_WE}.spv")
+
   add_custom_command(
-    OUTPUT ${SPIRV}                                                     # Specify the output file
-    COMMAND ${GLSL_VALIDATOR} -V ${GLSL} -o ${SPIRV}                    # Command to compile the shader
-    DEPENDS ${GLSL})                                                    # Specify the dependency on the shader source file
-  list(APPEND SPIRV_BINARY_FILES ${SPIRV})                              # Collect compiled shader files
+    OUTPUT ${SPIRV}
+    COMMAND ${GLSL_VALIDATOR} -V ${GLSL} -o ${SPIRV}
+    DEPENDS ${GLSL}
+  )
+  list(APPEND SPIRV_BINARY_FILES ${SPIRV})
 endforeach()
 
 add_custom_target(
     Shaders
-    DEPENDS ${SPIRV_BINARY_FILES}                                       # Specify the dependencies for the Shaders target
+    DEPENDS ${SPIRV_BINARY_FILES}
 )
 
-add_dependencies(demo Shaders)                                          # Add Shaders target as a dependency of the demo target
+add_dependencies(demo Shaders)
 
 # TODO: Enable in production only
 # add_subdirectory("engine")
