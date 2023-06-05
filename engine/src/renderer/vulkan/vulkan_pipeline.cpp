@@ -8,14 +8,14 @@ namespace mz {
 		m_device = device;
 	}
 
-	bool VulkanPipeline::Create()
+	bool VulkanPipeline::Create(VkRenderPass renderPass)
 	{
 		MZ_CORE_TRACE("Creating Vulkan graphics rendering pipeline...");
 
 		/* Programmable part begin */
 		
-		auto vertShaderCode = EngineReadFile(s_engineMaterialShaderFragmentFileName);
-		auto fragShaderCode = EngineReadFile(s_engineMaterialShaderVertexFileName);
+		auto vertShaderCode = EngineReadFile(s_engineMaterialShaderVertexFileName);
+		auto fragShaderCode = EngineReadFile(s_engineMaterialShaderFragmentFileName);
 
 		// Vertex shader
 		auto vertexShadingModule = CreateShaderModule(vertShaderCode, m_device);
@@ -75,8 +75,10 @@ namespace mz {
 		// Viewport state
 		VkPipelineViewportStateCreateInfo viewportState{};
 		viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-		viewportState.viewportCount = 1;
 		viewportState.scissorCount = 1;
+		viewportState.pScissors = &scissor;
+		viewportState.viewportCount = 1;
+		viewportState.pViewports = &viewport;
 
 		// Rasterizer
 		VkPipelineRasterizationStateCreateInfo rasterizer{};
@@ -94,6 +96,10 @@ namespace mz {
 		multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
 		multisampling.sampleShadingEnable = VK_FALSE;
 		multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+		multisampling.minSampleShading = 1.0f;
+		multisampling.pSampleMask = 0;
+		multisampling.alphaToCoverageEnable = VK_FALSE;
+		multisampling.alphaToOneEnable = VK_FALSE;
 
 		// Color blending
 		VkPipelineColorBlendAttachmentState colorBlendAttachment{};
@@ -130,7 +136,29 @@ namespace mz {
 		if (vkCreatePipelineLayout(m_device, &pipelineLayoutInfo, nullptr, &m_pipelineLayout) != VK_SUCCESS) {
 			throw std::runtime_error("failed to create pipeline layout!");
 		}
-		
+
+		VkGraphicsPipelineCreateInfo pipelineInfo{};
+		pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+		pipelineInfo.stageCount = 2;
+		pipelineInfo.pStages = shaderStages;
+		pipelineInfo.pVertexInputState = &vertexInputInfo;
+		pipelineInfo.pInputAssemblyState = &inputAssembly;
+		pipelineInfo.pViewportState = &viewportState;
+		pipelineInfo.pRasterizationState = &rasterizer;
+		pipelineInfo.pMultisampleState = &multisampling;
+		pipelineInfo.pColorBlendState = &colorBlending;
+		pipelineInfo.pDynamicState = &dynamicState;
+		pipelineInfo.layout = m_pipelineLayout;
+		pipelineInfo.renderPass = renderPass;
+		pipelineInfo.subpass = 0;
+		pipelineInfo.pDepthStencilState = nullptr;
+		pipelineInfo.pTessellationState = nullptr;
+		pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
+
+		if (vkCreateGraphicsPipelines(m_device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_graphicsPipeline) != VK_SUCCESS) {
+			MZ_CORE_ERROR("Failed to create graphics pipeline!");
+			return false;
+		}
 
 		vkDestroyShaderModule(m_device, fragmentShaderModule, nullptr);
 		vkDestroyShaderModule(m_device, vertexShadingModule, nullptr);

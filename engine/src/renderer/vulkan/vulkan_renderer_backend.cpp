@@ -127,7 +127,7 @@ namespace mz {
 
 		// Pipeline creation
 		m_pipeline = std::make_unique<VulkanPipeline>(m_device->GetLogicalDevice(), m_swapChain);
-		if (!m_pipeline->Create()) {
+		if (!m_pipeline->Create(m_mainRenderPass->GetRenderPass())) {
 			MZ_CORE_CRITICAL("Failed to create Vulkan graphics pipeline!");
 			return false;
 		}

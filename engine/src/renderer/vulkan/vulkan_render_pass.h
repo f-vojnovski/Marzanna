@@ -14,5 +14,6 @@ namespace mz {
 		VulkanRenderPass(VkDevice m_device, std::shared_ptr<VulkanSwapChain> swapChain);
 		bool Create();
 		void Destroy();
+		inline VkRenderPass GetRenderPass() { return m_renderPass; }
 	};
 }
