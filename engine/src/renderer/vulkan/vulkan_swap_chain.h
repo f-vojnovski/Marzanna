@@ -14,7 +14,6 @@ namespace mz {
 		VkSwapchainKHR m_swapChain;
 		
 		std::vector<VkImage> m_images;
-
 		std::vector<VkImageView> m_imageViews;
 
 		VkSurfaceKHR m_surface;
@@ -32,5 +31,6 @@ namespace mz {
 		void CreateImageViews();
 		inline uint32_t GetExtentWidth() { return m_extent.height; }
 		inline uint32_t GetExtentHeight() { return m_extent.width; }
+		inline VkFormat GetImageFormat() { return m_surfaceFormat.format; }
 	};
 }

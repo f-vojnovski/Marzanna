@@ -33,6 +33,8 @@
 #include "renderer/vulkan/vulkan_swap_chain.cpp"
 #include "renderer/vulkan/vulkan_pipeline.h"
 #include "renderer/vulkan/vulkan_pipeline.cpp"
+#include "renderer/vulkan/vulkan_render_pass.h"
+#include "renderer/vulkan/vulkan_render_pass.cpp"
 #include "renderer/vulkan/shaders/vulkan_shader_utils.h"
 #include "renderer/vulkan/shaders/vulkan_shader_utils.cpp"
 #include "system/file_reader.h"

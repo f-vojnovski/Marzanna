@@ -118,6 +118,13 @@ namespace mz {
 		m_swapChain = std::make_shared<VulkanSwapChain>(m_surface, m_device->GetLogicalDevice(), m_device->GetSwapChainSupportDetails(), m_device->GetQueueFamilyIndices());
 		m_swapChain->Create();
 
+		// Main render pass
+		m_mainRenderPass = std::make_unique<VulkanRenderPass>(m_device->GetLogicalDevice(), m_swapChain);
+		if (!m_mainRenderPass->Create()) {
+			MZ_CORE_CRITICAL("Failed to create main render pass");
+			return false;
+		}
+
 		// Pipeline creation
 		m_pipeline = std::make_unique<VulkanPipeline>(m_device->GetLogicalDevice(), m_swapChain);
 		if (!m_pipeline->Create()) {
@@ -131,6 +138,8 @@ namespace mz {
 	void VulkanRendererBackend::Shutdown()
 	{
 		m_pipeline->Destroy(m_allocator);
+
+		m_mainRenderPass->Destroy();
 
 		m_swapChain->Destroy(m_allocator);
 

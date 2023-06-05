@@ -6,6 +6,7 @@
 #include "vulkan_device.h"
 #include "vulkan_swap_chain.h"
 #include "vulkan_pipeline.h"
+#include "vulkan_render_pass.h"
 
 namespace mz {
 	class VulkanRendererBackend : public RendererBackend {
@@ -23,6 +24,7 @@ namespace mz {
 		std::unique_ptr<VulkanDevice> m_device;
 		std::shared_ptr<VulkanSwapChain> m_swapChain;
 		std::unique_ptr<VulkanPipeline> m_pipeline;
+		std::unique_ptr<VulkanRenderPass> m_mainRenderPass;
 		std::vector<const char*> m_validationLayers;
 		VkSurfaceKHR m_surface;
 
