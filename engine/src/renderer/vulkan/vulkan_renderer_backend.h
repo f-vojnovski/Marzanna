@@ -21,7 +21,7 @@ namespace mz {
 		VkAllocationCallbacks* m_allocator;
 		VkDebugUtilsMessengerEXT m_debugMessegner;
 		std::unique_ptr<VulkanDevice> m_device;
-		std::unique_ptr<VulkanSwapChain> m_swapChain;
+		std::shared_ptr<VulkanSwapChain> m_swapChain;
 		std::unique_ptr<VulkanPipeline> m_pipeline;
 		std::vector<const char*> m_validationLayers;
 		VkSurfaceKHR m_surface;

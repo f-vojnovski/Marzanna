@@ -115,11 +115,11 @@ namespace mz {
 		}
 
 		// Swap chain creation
-		m_swapChain = std::make_unique<VulkanSwapChain>(m_surface, m_device->GetLogicalDevice(), m_device->GetSwapChainSupportDetails(), m_device->GetQueueFamilyIndices());
+		m_swapChain = std::make_shared<VulkanSwapChain>(m_surface, m_device->GetLogicalDevice(), m_device->GetSwapChainSupportDetails(), m_device->GetQueueFamilyIndices());
 		m_swapChain->Create();
 
 		// Pipeline creation
-		m_pipeline = std::make_unique<VulkanPipeline>(m_device->GetLogicalDevice());
+		m_pipeline = std::make_unique<VulkanPipeline>(m_device->GetLogicalDevice(), m_swapChain);
 		if (!m_pipeline->Create()) {
 			MZ_CORE_CRITICAL("Failed to create Vulkan graphics pipeline!");
 			return false;

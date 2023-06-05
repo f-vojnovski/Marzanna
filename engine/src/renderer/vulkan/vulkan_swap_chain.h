@@ -30,5 +30,7 @@ namespace mz {
 		void Destroy(VkAllocationCallbacks* allocator = nullptr);
 		VulkanSwapChain(VkSurfaceKHR surface, VkDevice device, SwapChainSupportDetails& swapChainSupportDetails, QueueFamilyIndices& queueFamilyIndices);
 		void CreateImageViews();
+		inline uint32_t GetExtentWidth() { return m_extent.height; }
+		inline uint32_t GetExtentHeight() { return m_extent.width; }
 	};
 }
