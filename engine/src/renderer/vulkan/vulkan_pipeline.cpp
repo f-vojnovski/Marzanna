@@ -172,5 +172,6 @@ namespace mz {
 	{
 		MZ_CORE_TRACE("Destroying Vulkan graphics pipeline...");
 		vkDestroyPipelineLayout(m_device, m_pipelineLayout, allocator);
+		vkDestroyPipeline(m_device, m_graphicsPipeline, allocator);
 	}
 }

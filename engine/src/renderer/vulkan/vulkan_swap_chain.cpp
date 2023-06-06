@@ -104,6 +104,40 @@ namespace mz {
 		}
 	}
 
+	bool VulkanSwapChain::CreateFramebuffers(VkRenderPass renderPass)
+	{
+		m_framebuffers.resize(m_imageViews.size());
+
+		for (size_t i = 0; i < m_imageViews.size(); i++) {
+			VkImageView attachments[] = {
+				m_imageViews[i]
+			};
+
+			VkFramebufferCreateInfo framebufferInfo{};
+			framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+			framebufferInfo.renderPass = renderPass;
+			framebufferInfo.attachmentCount = 1;
+			framebufferInfo.pAttachments = attachments;
+			framebufferInfo.width = m_extent.width;
+			framebufferInfo.height = m_extent.height;
+			framebufferInfo.layers = 1;
+
+			if (vkCreateFramebuffer(m_device, &framebufferInfo, nullptr, &m_framebuffers[i]) != VK_SUCCESS) {
+				MZ_CORE_ERROR("Failed to create framebuffer!");
+				return false;
+			}
+		}
+	}
+
+	
+	void VulkanSwapChain::DestroyFramebuffers()
+	{
+		MZ_CORE_TRACE("Destroying framebuffers...");
+		for(auto framebuffer : m_framebuffers) {
+			vkDestroyFramebuffer(m_device, framebuffer, nullptr);
+		}
+	}
+
 	void VulkanSwapChain::ChooseSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats)
 	{
 		for (const auto& availableFormat : availableFormats) {
