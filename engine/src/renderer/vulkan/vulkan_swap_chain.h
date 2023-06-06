@@ -36,5 +36,6 @@ namespace mz {
 		inline uint32_t GetExtentWidth() { return m_extent.height; }
 		inline uint32_t GetExtentHeight() { return m_extent.width; }
 		inline VkFormat GetImageFormat() { return m_surfaceFormat.format; }
+		inline VkFramebuffer GetFramebuffer(int index) { return m_framebuffers[index]; }
 	};
 }

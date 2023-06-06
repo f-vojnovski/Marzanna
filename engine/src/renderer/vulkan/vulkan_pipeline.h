@@ -18,5 +18,6 @@ namespace mz {
 		VulkanPipeline(VkDevice device, std::shared_ptr<VulkanSwapChain>);
 		bool Create(VkRenderPass renderPass);
 		void Destroy(VkAllocationCallbacks* allocator);
+		void Bind(VkCommandBuffer commandBuffer);
 	};
 }

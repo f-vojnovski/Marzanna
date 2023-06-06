@@ -1,5 +1,6 @@
 #include "vulkan_renderer_backend.h"
 #include "vulkan_utils.h"
+#include "vulkan_command_buffer.h"
 
 namespace mz {
 	VulkanRendererBackend::VulkanRendererBackend(const RendererBackendArgs args) 
@@ -134,14 +135,17 @@ namespace mz {
 
 		m_swapChain->CreateFramebuffers(m_mainRenderPass->GetRenderPass());
 
-		m_device->CreateCommandPool();
+		if (!m_device->CreateGraphicsCommandPool()) {
+			MZ_CORE_CRITICAL("Failed to create graphics command pool!");
+			return false;
+		}
 
 		return true;
 	}
 	
 	void VulkanRendererBackend::Shutdown()
 	{
-		m_device->DestroyCommandPool();
+		m_device->DestroyGraphicsCommandPool();
 
 		m_swapChain->DestroyFramebuffers();
 
@@ -169,7 +173,35 @@ namespace mz {
 	
 	bool VulkanRendererBackend::BeginFrame()
 	{
-		return false;
+		VulkanCommandBuffer buffer(m_device->GetGraphicsCommandPool(), m_device->GetLogicalDevice());
+		if (!TEMPORARY_TEST_COMMAND_BUFFER_ALLOCATED) {
+			buffer.Create();
+		}
+		buffer.Begin();
+		m_mainRenderPass->Begin(buffer, 0);
+		m_pipeline->Bind(buffer.GetHandle());
+
+		VkViewport viewport{};
+		viewport.x = 0.0f;
+		viewport.y = 0.0f;
+		viewport.width = static_cast<float>(m_swapChain->GetExtentWidth());
+		viewport.height = static_cast<float>(m_swapChain->GetExtentHeight());
+		viewport.minDepth = 0.0f;
+		viewport.maxDepth = 1.0f;
+		vkCmdSetViewport(buffer.GetHandle(), 0, 1, &viewport);
+
+		VkRect2D scissor{};
+		scissor.offset = { 0, 0 };
+		scissor.extent.width = m_swapChain->GetExtentWidth();
+		scissor.extent.height = m_swapChain->GetExtentHeight();
+		vkCmdSetScissor(buffer.GetHandle(), 0, 1, &scissor);
+
+		vkCmdDraw(buffer.GetHandle(), 3, 1, 0, 0);
+
+		m_mainRenderPass->End(buffer, 0);
+		buffer.End();
+
+		return true;
 	}
 	
 	bool VulkanRendererBackend::EndFrame()

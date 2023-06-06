@@ -35,5 +35,7 @@ namespace mz {
 			VkDebugUtilsMessageTypeFlagsEXT message_types,
 			const VkDebugUtilsMessengerCallbackDataEXT* callback_data,
 			void* user_data);
+
+		inline static bool TEMPORARY_TEST_COMMAND_BUFFER_ALLOCATED = false;
 	};
 }

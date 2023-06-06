@@ -32,6 +32,7 @@ namespace mz {
 			if (m_isSuspended) continue;
 
 			m_window->OnUpdate();
+			m_renderApi->DrawFrame();
 
 			for (Layer* layer : m_layerStack) {
 				layer->OnUpdate();

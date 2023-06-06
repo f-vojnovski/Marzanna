@@ -48,4 +48,27 @@ namespace mz {
 		MZ_CORE_TRACE("Destroying render pass...");
 		vkDestroyRenderPass(m_device, m_renderPass, nullptr);
 	}
+    
+    void VulkanRenderPass::Begin(VulkanCommandBuffer& commandBuffer, uint32_t imageIndex)
+    {
+        VkRenderPassBeginInfo renderPassInfo{};
+        renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+        renderPassInfo.renderPass = m_renderPass;
+        renderPassInfo.framebuffer = m_swapChain->GetFramebuffer(imageIndex);
+
+        renderPassInfo.renderArea.offset = { 0, 0 };
+        renderPassInfo.renderArea.extent.width = m_swapChain->GetExtentWidth();
+        renderPassInfo.renderArea.extent.height = m_swapChain->GetExtentHeight();
+
+        VkClearValue clearColor = { {{0.0f, 0.0f, 0.0f, 1.0f}} };
+        renderPassInfo.clearValueCount = 1;
+        renderPassInfo.pClearValues = &clearColor;
+
+        vkCmdBeginRenderPass(commandBuffer.GetHandle(), &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+    }
+    
+    void VulkanRenderPass::End(VulkanCommandBuffer& commandBuffer, uint32_t imageIndex)
+    {
+        vkCmdEndRenderPass(commandBuffer.GetHandle());
+    }
 }

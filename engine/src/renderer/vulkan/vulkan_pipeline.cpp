@@ -174,4 +174,9 @@ namespace mz {
 		vkDestroyPipelineLayout(m_device, m_pipelineLayout, allocator);
 		vkDestroyPipeline(m_device, m_graphicsPipeline, allocator);
 	}
+	
+	void VulkanPipeline::Bind(VkCommandBuffer commandBuffer)
+	{
+		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_graphicsPipeline);
+	}
 }

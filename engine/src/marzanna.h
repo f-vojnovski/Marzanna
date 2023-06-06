@@ -37,5 +37,7 @@
 #include "renderer/vulkan/vulkan_render_pass.cpp"
 #include "renderer/vulkan/shaders/vulkan_shader_utils.h"
 #include "renderer/vulkan/shaders/vulkan_shader_utils.cpp"
+#include "renderer/vulkan/vulkan_command_buffer.h"
+#include "renderer/vulkan/vulkan_command_buffer.cpp"
 #include "system/file_reader.h"
 #include "system/file_reader.cpp"

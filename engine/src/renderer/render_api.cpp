@@ -39,6 +39,7 @@ namespace mz {
 	}
 
 	bool RenderAPI::DrawFrame() {
+		m_rendererBackend->BeginFrame();
 		return true;
 	}
 }
