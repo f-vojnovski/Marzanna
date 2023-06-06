@@ -87,6 +87,7 @@ namespace mz {
 		m_device = VK_NULL_HANDLE;
 		m_presentQueue = VK_NULL_HANDLE;
 		m_graphicsQueue = VK_NULL_HANDLE;
+		m_graphicsCommandPool = VK_NULL_HANDLE;
 		m_surface = surface;
 	}
 
@@ -193,5 +194,25 @@ namespace mz {
 		}
 
 		return requiredExtensions.empty();
+	}
+
+	bool VulkanDevice::CreateGraphicsCommandPool() {
+		MZ_CORE_TRACE("Creating graphics command pool...");
+		VkCommandPoolCreateInfo poolInfo{};
+		poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+		poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+		poolInfo.queueFamilyIndex = m_queueFamilyIndices.graphicsFamily.value();
+
+		if (vkCreateCommandPool(m_device, &poolInfo, nullptr, &m_graphicsCommandPool) != VK_SUCCESS) {
+			MZ_CORE_ERROR("Failed to create graphics command pool!");
+			return false;
+		}
+
+		return true;
+	}
+
+	void VulkanDevice::DestroyGraphicsCommandPool() {
+		MZ_CORE_TRACE("Destroying graphics command pool...");
+		vkDestroyCommandPool(m_device, m_graphicsCommandPool, nullptr);
 	}
 }

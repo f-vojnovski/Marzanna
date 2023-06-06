@@ -32,6 +32,8 @@ namespace mz {
 
 		VkSurfaceKHR m_surface;
 
+		VkCommandPool m_graphicsCommandPool;
+
 		static QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surface);
 		static bool IsDeviceSuitable(VkPhysicalDevice device, QueueFamilyIndices indices, SwapChainSupportDetails swapChainDetails);
 		static bool CheckDeviceExtensionSupport(VkPhysicalDevice device);
@@ -47,6 +49,9 @@ namespace mz {
 		inline SwapChainSupportDetails& GetSwapChainSupportDetails() { return m_swapChainSupportDetails; }
 		inline QueueFamilyIndices& GetQueueFamilyIndices() { return m_queueFamilyIndices; }
 		inline VkDevice GetLogicalDevice() { return m_device; }
+		bool CreateGraphicsCommandPool();
+		void DestroyGraphicsCommandPool();
+		inline VkCommandPool GetGraphicsCommandPool() { return m_graphicsCommandPool; }
 	};
 
 	const std::vector<const char*> VulkanDevice::s_requiredDeviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };

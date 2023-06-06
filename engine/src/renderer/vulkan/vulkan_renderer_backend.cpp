@@ -134,11 +134,15 @@ namespace mz {
 
 		m_swapChain->CreateFramebuffers(m_mainRenderPass->GetRenderPass());
 
+		m_device->CreateCommandPool();
+
 		return true;
 	}
 	
 	void VulkanRendererBackend::Shutdown()
 	{
+		m_device->DestroyCommandPool();
+
 		m_swapChain->DestroyFramebuffers();
 
 		m_pipeline->Destroy(m_allocator);
