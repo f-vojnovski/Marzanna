@@ -21,19 +21,4 @@ namespace mz {
 			return false;
 		}
 	}
-	
-	void VulkanCommandBuffer::Begin()
-	{
-		VkCommandBufferBeginInfo beginInfo{};
-		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-		beginInfo.flags = 0;					// Optional
-		beginInfo.pInheritanceInfo = nullptr;	// Optional
-
-		VK_CHECK(vkBeginCommandBuffer(m_handle, &beginInfo));
-	}
-	
-	void VulkanCommandBuffer::End()
-	{
-		VK_CHECK(vkEndCommandBuffer(m_handle));
-	}
 }

@@ -138,6 +138,59 @@ namespace mz {
 		}
 	}
 
+	bool VulkanSwapChain::CreateSyncObjects()
+	{
+		MZ_CORE_TRACE("Creating swap chain sync objects...");
+		
+		VkSemaphoreCreateInfo semaphoreInfo{};
+		semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+		
+		if (vkCreateSemaphore(m_device, &semaphoreInfo, nullptr, &m_imageAvailableSemaphore) != VK_SUCCESS) {
+			return false;
+		}
+		
+		if (vkCreateSemaphore(m_device, &semaphoreInfo, nullptr, &m_renderFinishedSemaphore) != VK_SUCCESS) {
+			return false;
+		}
+
+		VkFenceCreateInfo fenceInfo{};
+		fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+		fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+
+		if (vkCreateFence(m_device, &fenceInfo, nullptr, &m_inFlightFence) != VK_SUCCESS) {
+			return false;
+		}
+
+
+		MZ_CORE_INFO("Created swap chain sync objects!");
+
+		return true;
+	}
+
+	void VulkanSwapChain::DestroySyncObjects()
+	{
+		MZ_CORE_TRACE("Destroying sync objects...");
+
+		vkDestroySemaphore(m_device, m_imageAvailableSemaphore, nullptr);
+		vkDestroySemaphore(m_device, m_renderFinishedSemaphore, nullptr);
+		vkDestroyFence(m_device, m_inFlightFence, nullptr);
+	}
+
+	bool VulkanSwapChain::AcquireNextImageIndex()
+	{
+		VkResult result = vkAcquireNextImageKHR(
+			m_device,
+			m_swapChain,
+			UINT64_MAX,
+			m_imageAvailableSemaphore,
+			VK_NULL_HANDLE,
+			&m_nextImageIndex);
+
+		if (result != VK_SUCCESS) {
+			return false;
+		}
+	}
+
 	void VulkanSwapChain::ChooseSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats)
 	{
 		for (const auto& availableFormat : availableFormats) {

@@ -133,10 +133,22 @@ namespace mz {
 			return false;
 		}
 
+		// Framebuffers
 		m_swapChain->CreateFramebuffers(m_mainRenderPass->GetRenderPass());
 
+		// Command pool
 		if (!m_device->CreateGraphicsCommandPool()) {
 			MZ_CORE_CRITICAL("Failed to create graphics command pool!");
+			return false;
+		}
+
+		// Command buffer {IMPL LATER}
+		m_buffer = std::make_unique<VulkanCommandBuffer>(m_device->GetGraphicsCommandPool(), m_device->GetLogicalDevice());
+		m_buffer->Create();
+
+		// Sync objects
+		if (!m_swapChain->CreateSyncObjects()) {
+			MZ_CORE_CRITICAL("Failed to create swap chain sync objects!");
 			return false;
 		}
 
@@ -145,6 +157,10 @@ namespace mz {
 	
 	void VulkanRendererBackend::Shutdown()
 	{
+		vkDeviceWaitIdle(m_device->GetLogicalDevice());
+
+		m_swapChain->DestroySyncObjects();
+
 		m_device->DestroyGraphicsCommandPool();
 
 		m_swapChain->DestroyFramebuffers();
@@ -173,33 +189,55 @@ namespace mz {
 	
 	bool VulkanRendererBackend::BeginFrame()
 	{
-		VulkanCommandBuffer buffer(m_device->GetGraphicsCommandPool(), m_device->GetLogicalDevice());
-		if (!TEMPORARY_TEST_COMMAND_BUFFER_ALLOCATED) {
-			buffer.Create();
-		}
-		buffer.Begin();
-		m_mainRenderPass->Begin(buffer, 0);
-		m_pipeline->Bind(buffer.GetHandle());
+		vkWaitForFences(m_device->GetLogicalDevice(), 1, &m_swapChain->GetInFlightFence(), VK_TRUE, UINT64_MAX);
+		vkResetFences(m_device->GetLogicalDevice(), 1, &m_swapChain->GetInFlightFence());
 
-		VkViewport viewport{};
-		viewport.x = 0.0f;
-		viewport.y = 0.0f;
-		viewport.width = static_cast<float>(m_swapChain->GetExtentWidth());
-		viewport.height = static_cast<float>(m_swapChain->GetExtentHeight());
-		viewport.minDepth = 0.0f;
-		viewport.maxDepth = 1.0f;
-		vkCmdSetViewport(buffer.GetHandle(), 0, 1, &viewport);
+		m_swapChain->AcquireNextImageIndex();
+		uint32_t imageIndex = m_swapChain->GetNextImageIndex();
 
-		VkRect2D scissor{};
-		scissor.offset = { 0, 0 };
-		scissor.extent.width = m_swapChain->GetExtentWidth();
-		scissor.extent.height = m_swapChain->GetExtentHeight();
-		vkCmdSetScissor(buffer.GetHandle(), 0, 1, &scissor);
+		auto commandBuffer = m_buffer->GetHandle();
 
-		vkCmdDraw(buffer.GetHandle(), 3, 1, 0, 0);
+		vkResetCommandBuffer(commandBuffer, 0);
 
-		m_mainRenderPass->End(buffer, 0);
-		buffer.End();
+		RecordCommandBuffer(commandBuffer, imageIndex);
+
+		VkSubmitInfo submitInfo{};
+		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+
+		VkSemaphore waitSemaphores[] = { m_swapChain->GetImageAvailableSemaphore() };
+		VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+		submitInfo.waitSemaphoreCount = 1;
+		submitInfo.pWaitSemaphores = waitSemaphores;
+		submitInfo.pWaitDstStageMask = waitStages;
+
+		submitInfo.commandBufferCount = 1;
+		submitInfo.pCommandBuffers = &commandBuffer;
+
+		VkSemaphore signalSemaphores[] = { m_swapChain->GetRenderFinishedSemaphore()};
+		submitInfo.signalSemaphoreCount = 1;
+		submitInfo.pSignalSemaphores = signalSemaphores;
+
+		VK_CHECK(vkQueueSubmit(m_device->GetGraphicsQueue(), 1, &submitInfo, m_swapChain->GetInFlightFence()));
+
+		VkSubpassDependency dependency{};
+		dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+		dependency.dstSubpass = 0;
+
+		dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+		dependency.srcAccessMask = 0;
+
+		VkPresentInfoKHR presentInfo{};
+		presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+
+		presentInfo.waitSemaphoreCount = 1;
+		presentInfo.pWaitSemaphores = signalSemaphores;
+
+		VkSwapchainKHR swapChains[] = { m_swapChain->GetHandle()};
+		presentInfo.swapchainCount = 1;
+		presentInfo.pSwapchains = swapChains;
+		presentInfo.pImageIndices = &imageIndex;
+
+		vkQueuePresentKHR(m_device->GetPresentQueue(), &presentInfo);
 
 		return true;
 	}
@@ -230,5 +268,50 @@ namespace mz {
 			break;
 		}
 		return VK_FALSE;
+	}
+	
+	void VulkanRendererBackend::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex)
+	{
+		VkCommandBufferBeginInfo beginInfo{};
+		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+
+		if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS) {
+			throw std::runtime_error("failed to begin recording command buffer!");
+		}
+
+		VkRenderPassBeginInfo renderPassInfo{};
+		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+		renderPassInfo.renderPass = m_mainRenderPass->GetRenderPass();
+		renderPassInfo.framebuffer = m_swapChain->GetFramebuffer(imageIndex);
+		renderPassInfo.renderArea.offset = { 0, 0 };
+		renderPassInfo.renderArea.extent = m_swapChain->GetExtent();
+
+		VkClearValue clearColor = { {{0.0f, 0.0f, 0.0f, 1.0f}} };
+		renderPassInfo.clearValueCount = 1;
+		renderPassInfo.pClearValues = &clearColor;
+
+		vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline->GetHandle());
+
+		VkViewport viewport{};
+		viewport.x = 0.0f;
+		viewport.y = 0.0f;
+		viewport.width = (float)m_swapChain->GetExtentHeight();
+		viewport.height = (float)m_swapChain->GetExtentWidth();
+		viewport.minDepth = 0.0f;
+		viewport.maxDepth = 1.0f;
+		vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+
+		VkRect2D scissor{};
+		scissor.offset = { 0, 0 };
+		scissor.extent = m_swapChain->GetExtent();
+		vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+
+		vkCmdDraw(commandBuffer, 3, 1, 0, 0);
+
+		vkCmdEndRenderPass(commandBuffer);
+
+		VK_CHECK(vkEndCommandBuffer(commandBuffer));
 	}
 }

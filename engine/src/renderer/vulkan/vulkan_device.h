@@ -1,25 +1,13 @@
 #pragma once
 
 #include "engine/src/mzpch.h"
+#include "vulkan_context.h"
 
 namespace mz {
-	struct QueueFamilyIndices {
-		std::optional<uint32_t> graphicsFamily;
-		std::optional<uint32_t> presentFamily;
-
-		bool isComplete() {
-			return graphicsFamily.has_value() && presentFamily.has_value();
-		}
-	};
-
-	struct SwapChainSupportDetails {
-		VkSurfaceCapabilitiesKHR capabilities;
-		std::vector<VkSurfaceFormatKHR> formats;
-		std::vector<VkPresentModeKHR> presentModes;
-	};
-
 	class VulkanDevice {
 	private:
+		std::shared_ptr<VulkanContext> m_contextPtr;
+
 		VkPhysicalDevice m_physicalDevice;
 		VkDevice m_device;
 
@@ -52,6 +40,8 @@ namespace mz {
 		bool CreateGraphicsCommandPool();
 		void DestroyGraphicsCommandPool();
 		inline VkCommandPool GetGraphicsCommandPool() { return m_graphicsCommandPool; }
+		inline VkQueue GetGraphicsQueue() { return m_graphicsQueue; }
+		inline VkQueue GetPresentQueue() { return m_presentQueue; }
 	};
 
 	const std::vector<const char*> VulkanDevice::s_requiredDeviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };

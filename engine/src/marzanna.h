@@ -22,6 +22,7 @@
 #include "renderer/renderer_backend.h"
 #include "renderer/render_api.h"
 #include "renderer/render_api.cpp"
+#include "renderer/vulkan/vulkan_context.h"
 #include "renderer/vulkan/vulkan_renderer_backend.h"
 #include "renderer/vulkan/vulkan_renderer_backend.cpp"
 #include "renderer/vulkan/vulkan_utils.h"

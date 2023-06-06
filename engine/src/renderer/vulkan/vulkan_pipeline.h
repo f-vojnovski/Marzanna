@@ -19,5 +19,6 @@ namespace mz {
 		bool Create(VkRenderPass renderPass);
 		void Destroy(VkAllocationCallbacks* allocator);
 		void Bind(VkCommandBuffer commandBuffer);
+		inline VkPipeline GetHandle() { return m_graphicsPipeline; }
 	};
 }

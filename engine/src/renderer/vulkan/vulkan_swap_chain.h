@@ -21,11 +21,16 @@ namespace mz {
 		QueueFamilyIndices& m_queueFamilyIndices;
 		VkDevice m_device;
 
+		std::vector<VkFramebuffer> m_framebuffers;
+
+		VkSemaphore m_imageAvailableSemaphore;
+		VkSemaphore m_renderFinishedSemaphore;
+		VkFence m_inFlightFence;
+		uint32_t m_nextImageIndex;
+
 		void ChooseSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
 		void ChoosePresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
 		void ChooseExtent(const VkSurfaceCapabilitiesKHR& capabilities);
-
-		std::vector<VkFramebuffer> m_framebuffers;
 	public:
 		void Create();
 		void Destroy(VkAllocationCallbacks* allocator = nullptr);
@@ -33,9 +38,18 @@ namespace mz {
 		void CreateImageViews();
 		bool CreateFramebuffers(VkRenderPass renderPass);
 		void DestroyFramebuffers();
+		bool CreateSyncObjects();
+		void DestroySyncObjects();
+		bool AcquireNextImageIndex();
+		inline uint32_t GetNextImageIndex() { return m_nextImageIndex; }
+		inline VkExtent2D GetExtent() { return m_extent;  }
 		inline uint32_t GetExtentWidth() { return m_extent.height; }
 		inline uint32_t GetExtentHeight() { return m_extent.width; }
 		inline VkFormat GetImageFormat() { return m_surfaceFormat.format; }
 		inline VkFramebuffer GetFramebuffer(int index) { return m_framebuffers[index]; }
+		inline VkSemaphore& GetImageAvailableSemaphore() { return m_imageAvailableSemaphore; }
+		inline VkSemaphore& GetRenderFinishedSemaphore() { return m_renderFinishedSemaphore; }
+		inline VkFence& GetInFlightFence() { return m_inFlightFence; }
+		inline VkSwapchainKHR& GetHandle() { return m_swapChain; }
 	};
 }

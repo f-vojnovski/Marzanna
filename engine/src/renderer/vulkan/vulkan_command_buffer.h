@@ -12,8 +12,6 @@ namespace mz {
     public:
         VulkanCommandBuffer(VkCommandPool commandPool, VkDevice device);
         bool Create();
-        void Begin();
-        void End();
-        inline VkCommandBuffer const GetHandle() { return m_handle; }
+        inline VkCommandBuffer& const GetHandle() { return m_handle; }
     };
 }
