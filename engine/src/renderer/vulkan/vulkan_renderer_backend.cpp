@@ -5,10 +5,9 @@
 namespace mz {
 	VulkanRendererBackend::VulkanRendererBackend(const RendererBackendArgs args) 
 	{
+		contextPtr = std::make_shared<VulkanContext>();
 		m_name = args.name;
-		m_window = args.window;
-		m_allocator = nullptr;
-		m_window = args.window;
+		contextPtr->window = args.window;
 	}
 
 	bool VulkanRendererBackend::Initialize()
@@ -41,13 +40,13 @@ namespace mz {
 		// Vulkan validation layers
 		// Non-release builds
 		MZ_CORE_INFO("Validation layers enabled. Enumerating...");
-		m_validationLayers.push_back("VK_LAYER_KHRONOS_validation");
+		contextPtr->validationLayers.push_back("VK_LAYER_KHRONOS_validation");
 
 		uint32_t availableLayerCount = 0;
 		VK_CHECK(vkEnumerateInstanceLayerProperties(&availableLayerCount, nullptr));
 		std::vector<VkLayerProperties> availableLayers(availableLayerCount);
 		VK_CHECK(vkEnumerateInstanceLayerProperties(&availableLayerCount, availableLayers.data()))
-			for (const char* layerName : m_validationLayers) {
+			for (const char* layerName : contextPtr->validationLayers) {
 				MZ_CORE_TRACE("Searching for validation layer {0}", layerName);
 				bool layerFound = false;
 				for (const auto& layerProperties : availableLayers) {
@@ -69,10 +68,10 @@ namespace mz {
 		createInfo.pApplicationInfo = &appInfo;
 		createInfo.enabledExtensionCount = static_cast<uint32_t>(requiredExtensions.size());
 		createInfo.ppEnabledExtensionNames = requiredExtensions.data();
-		createInfo.enabledLayerCount = static_cast<uint32_t>(m_validationLayers.size());
-		createInfo.ppEnabledLayerNames = m_validationLayers.data();
+		createInfo.enabledLayerCount = static_cast<uint32_t>(contextPtr->validationLayers.size());
+		createInfo.ppEnabledLayerNames = contextPtr->validationLayers.data();
 
-		VK_CHECK(vkCreateInstance(&createInfo, m_allocator, &m_instance));
+		VK_CHECK(vkCreateInstance(&createInfo, contextPtr->allocator, &contextPtr->instance));
 
 		MZ_CORE_INFO("Vulkan instance created successfully!");
 
@@ -89,52 +88,52 @@ namespace mz {
 		debugCreateInfo.pfnUserCallback = VulkanDebugCallback;
 
 		PFN_vkCreateDebugUtilsMessengerEXT func =
-			(PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(m_instance, "vkCreateDebugUtilsMessengerEXT");
+			(PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(contextPtr->instance, "vkCreateDebugUtilsMessengerEXT");
 		MZ_ASSERT_MSG(func, "Failed to create debug messenger!");
-		VK_CHECK(func(m_instance, &debugCreateInfo, m_allocator, &m_debugMessegner));
+		VK_CHECK(func(contextPtr->instance, &debugCreateInfo, contextPtr->allocator, &m_debugMessegner));
 		MZ_CORE_INFO("Vulkan debugger created.");
 
 		// Surface creation
 		MZ_CORE_TRACE("Creating Vulkan surface...");
-		if (!PlatformCreateVulkanSurface(m_instance, m_window, m_allocator, &m_surface)) {
+		if (!PlatformCreateVulkanSurface(contextPtr->instance, contextPtr->window, contextPtr->allocator, &contextPtr->surface)) {
 			MZ_CORE_CRITICAL("Surface creation failed!");
 			return false;
 		}
 		MZ_CORE_INFO("Vulkan surface created successfully!");
 
 		// Device creation
-		m_device = std::make_unique<VulkanDevice>(m_surface);
+		m_device = std::make_unique<VulkanDevice>(contextPtr);
 		
-		if (!m_device->SelectPhysicalDevice(m_instance)) {
+		if (!m_device->SelectPhysicalDevice()) {
 			MZ_CORE_CRITICAL("Failed to select physical device!");
 			return false;
 		}
 
-		if (!m_device->CreateLogicalDevice(m_validationLayers, m_allocator)) {
+		if (!m_device->CreateLogicalDevice()) {
 			MZ_CORE_CRITICAL("Failed to create Vulkan logical device!");
 			return false;
 		}
 
 		// Swap chain creation
-		m_swapChain = std::make_shared<VulkanSwapChain>(m_surface, m_device->GetLogicalDevice(), m_device->GetSwapChainSupportDetails(), m_device->GetQueueFamilyIndices());
+		m_swapChain = std::make_shared<VulkanSwapChain>(contextPtr);
 		m_swapChain->Create();
 
 		// Main render pass
-		m_mainRenderPass = std::make_unique<VulkanRenderPass>(m_device->GetLogicalDevice(), m_swapChain);
+		m_mainRenderPass = std::make_unique<VulkanRenderPass>(contextPtr);
 		if (!m_mainRenderPass->Create()) {
 			MZ_CORE_CRITICAL("Failed to create main render pass");
 			return false;
 		}
 
 		// Pipeline creation
-		m_pipeline = std::make_unique<VulkanPipeline>(m_device->GetLogicalDevice(), m_swapChain);
-		if (!m_pipeline->Create(m_mainRenderPass->GetRenderPass())) {
+		m_pipeline = std::make_unique<VulkanPipeline>(contextPtr);
+		if (!m_pipeline->Create(contextPtr->mainRenderPass.handle)) {
 			MZ_CORE_CRITICAL("Failed to create Vulkan graphics pipeline!");
 			return false;
 		}
 
 		// Framebuffers
-		m_swapChain->CreateFramebuffers(m_mainRenderPass->GetRenderPass());
+		m_swapChain->CreateFramebuffers(contextPtr->mainRenderPass.handle);
 
 		// Command pool
 		if (!m_device->CreateGraphicsCommandPool()) {
@@ -143,7 +142,7 @@ namespace mz {
 		}
 
 		// Command buffer {IMPL LATER}
-		m_buffer = std::make_unique<VulkanCommandBuffer>(m_device->GetGraphicsCommandPool(), m_device->GetLogicalDevice());
+		m_buffer = std::make_unique<VulkanCommandBuffer>(contextPtr->device.graphicsCommandPool, contextPtr->device.logicalDevice);
 		m_buffer->Create();
 
 		// Sync objects
@@ -157,7 +156,7 @@ namespace mz {
 	
 	void VulkanRendererBackend::Shutdown()
 	{
-		vkDeviceWaitIdle(m_device->GetLogicalDevice());
+		vkDeviceWaitIdle(contextPtr->device.logicalDevice);
 
 		m_swapChain->DestroySyncObjects();
 
@@ -165,35 +164,35 @@ namespace mz {
 
 		m_swapChain->DestroyFramebuffers();
 
-		m_pipeline->Destroy(m_allocator);
+		m_pipeline->Destroy();
 
 		m_mainRenderPass->Destroy();
 
-		m_swapChain->Destroy(m_allocator);
+		m_swapChain->Destroy();
 
-		m_device->Shutdown(m_allocator);
+		m_device->Shutdown();
 
 		MZ_CORE_TRACE("Destroying surface...");
-		vkDestroySurfaceKHR(m_instance, m_surface, m_allocator);
+		vkDestroySurfaceKHR(contextPtr->instance, contextPtr->surface, contextPtr->allocator);
 
 		MZ_CORE_TRACE("Destroying Vulkan debugger...");
 		if (m_debugMessegner) {
 			PFN_vkDestroyDebugUtilsMessengerEXT func =
-				(PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(m_instance, "vkDestroyDebugUtilsMessengerEXT");
-			func(m_instance, m_debugMessegner, m_allocator);
+				(PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(contextPtr->instance, "vkDestroyDebugUtilsMessengerEXT");
+			func(contextPtr->instance, m_debugMessegner, contextPtr->allocator);
 		}
 
 		MZ_CORE_TRACE("Destroying Vulkan instance...");
-		vkDestroyInstance(m_instance, m_allocator);
+		vkDestroyInstance(contextPtr->instance, contextPtr->allocator);
 	}
 	
 	bool VulkanRendererBackend::BeginFrame()
 	{
-		vkWaitForFences(m_device->GetLogicalDevice(), 1, &m_swapChain->GetInFlightFence(), VK_TRUE, UINT64_MAX);
-		vkResetFences(m_device->GetLogicalDevice(), 1, &m_swapChain->GetInFlightFence());
+		vkWaitForFences(contextPtr->device.logicalDevice, 1, &contextPtr->swapChain.inFlightFence, VK_TRUE, UINT64_MAX);
+		vkResetFences(contextPtr->device.logicalDevice, 1, &contextPtr->swapChain.inFlightFence);
 
 		m_swapChain->AcquireNextImageIndex();
-		uint32_t imageIndex = m_swapChain->GetNextImageIndex();
+		uint32_t imageIndex = contextPtr->swapChain.nextImageIndex;
 
 		auto commandBuffer = m_buffer->GetHandle();
 
@@ -204,7 +203,7 @@ namespace mz {
 		VkSubmitInfo submitInfo{};
 		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
-		VkSemaphore waitSemaphores[] = { m_swapChain->GetImageAvailableSemaphore() };
+		VkSemaphore waitSemaphores[] = { contextPtr->swapChain.imageAvailableSemaphore };
 		VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
 		submitInfo.waitSemaphoreCount = 1;
 		submitInfo.pWaitSemaphores = waitSemaphores;
@@ -213,11 +212,11 @@ namespace mz {
 		submitInfo.commandBufferCount = 1;
 		submitInfo.pCommandBuffers = &commandBuffer;
 
-		VkSemaphore signalSemaphores[] = { m_swapChain->GetRenderFinishedSemaphore()};
+		VkSemaphore signalSemaphores[] = { contextPtr->swapChain.renderFinishedSemaphore };
 		submitInfo.signalSemaphoreCount = 1;
 		submitInfo.pSignalSemaphores = signalSemaphores;
 
-		VK_CHECK(vkQueueSubmit(m_device->GetGraphicsQueue(), 1, &submitInfo, m_swapChain->GetInFlightFence()));
+		VK_CHECK(vkQueueSubmit(contextPtr->device.graphicsQueue, 1, &submitInfo, contextPtr->swapChain.inFlightFence));
 
 		VkSubpassDependency dependency{};
 		dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
@@ -232,12 +231,12 @@ namespace mz {
 		presentInfo.waitSemaphoreCount = 1;
 		presentInfo.pWaitSemaphores = signalSemaphores;
 
-		VkSwapchainKHR swapChains[] = { m_swapChain->GetHandle()};
+		VkSwapchainKHR swapChains[] = { contextPtr->swapChain.handle };
 		presentInfo.swapchainCount = 1;
 		presentInfo.pSwapchains = swapChains;
 		presentInfo.pImageIndices = &imageIndex;
 
-		vkQueuePresentKHR(m_device->GetPresentQueue(), &presentInfo);
+		vkQueuePresentKHR(contextPtr->device.presentQueue, &presentInfo);
 
 		return true;
 	}
@@ -281,10 +280,10 @@ namespace mz {
 
 		VkRenderPassBeginInfo renderPassInfo{};
 		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-		renderPassInfo.renderPass = m_mainRenderPass->GetRenderPass();
-		renderPassInfo.framebuffer = m_swapChain->GetFramebuffer(imageIndex);
+		renderPassInfo.renderPass = contextPtr->mainRenderPass.handle;
+		renderPassInfo.framebuffer = contextPtr->swapChain.framebuffers[imageIndex];
 		renderPassInfo.renderArea.offset = { 0, 0 };
-		renderPassInfo.renderArea.extent = m_swapChain->GetExtent();
+		renderPassInfo.renderArea.extent = contextPtr->swapChain.extent;
 
 		VkClearValue clearColor = { {{0.0f, 0.0f, 0.0f, 1.0f}} };
 		renderPassInfo.clearValueCount = 1;
@@ -292,20 +291,20 @@ namespace mz {
 
 		vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline->GetHandle());
+		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, contextPtr->graphicsRenderingPipeline.handle);
 
 		VkViewport viewport{};
 		viewport.x = 0.0f;
 		viewport.y = 0.0f;
-		viewport.width = (float)m_swapChain->GetExtentHeight();
-		viewport.height = (float)m_swapChain->GetExtentWidth();
+		viewport.width = (float)contextPtr->swapChain.extent.width;
+		viewport.height = (float)contextPtr->swapChain.extent.height;
 		viewport.minDepth = 0.0f;
 		viewport.maxDepth = 1.0f;
 		vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
 
 		VkRect2D scissor{};
 		scissor.offset = { 0, 0 };
-		scissor.extent = m_swapChain->GetExtent();
+		scissor.extent = contextPtr->swapChain.extent;
 		vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
 		vkCmdDraw(commandBuffer, 3, 1, 0, 0);

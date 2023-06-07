@@ -1,9 +1,9 @@
 #include "vulkan_render_pass.h"
 
 namespace mz {
-	VulkanRenderPass::VulkanRenderPass(VkDevice device, std::shared_ptr<VulkanSwapChain> swapChain) : m_swapChain(swapChain)
+	VulkanRenderPass::VulkanRenderPass(std::shared_ptr<VulkanContext> contextPtr)
 	{
-		m_device = device;
+        this->contextPtr = contextPtr;
 	}
 
 	bool VulkanRenderPass::Create()
@@ -11,7 +11,7 @@ namespace mz {
 		MZ_CORE_TRACE("Creating render pass...");
 
         VkAttachmentDescription colorAttachment{};
-        colorAttachment.format = m_swapChain->GetImageFormat();
+        colorAttachment.format = contextPtr->swapChain.surfaceFormat.format;
         colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
         colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
         colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -49,7 +49,7 @@ namespace mz {
         renderPassInfo.dependencyCount = 1;
         renderPassInfo.pDependencies = &dependency;
 
-		if (vkCreateRenderPass(m_device, &renderPassInfo, nullptr, &m_renderPass) != VK_SUCCESS) {
+		if (vkCreateRenderPass(contextPtr->device.logicalDevice, &renderPassInfo, contextPtr->allocator, &contextPtr->mainRenderPass.handle) != VK_SUCCESS) {
 			MZ_CORE_ERROR("Failed to create render pass");
 			return false;
 		}
@@ -59,21 +59,20 @@ namespace mz {
 	void VulkanRenderPass::Destroy()
 	{
 		MZ_CORE_TRACE("Destroying render pass...");
-		vkDestroyRenderPass(m_device, m_renderPass, nullptr);
+		vkDestroyRenderPass(contextPtr->device.logicalDevice, contextPtr->mainRenderPass.handle, contextPtr->allocator);
 	}
     
     void VulkanRenderPass::Begin(VulkanCommandBuffer& commandBuffer, uint32_t imageIndex)
     {
         VkRenderPassBeginInfo renderPassInfo{};
         renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-        renderPassInfo.renderPass = m_renderPass;
-        renderPassInfo.framebuffer = m_swapChain->GetFramebuffer(imageIndex);
+        renderPassInfo.renderPass = contextPtr->mainRenderPass.handle;
+        renderPassInfo.framebuffer = contextPtr->swapChain.framebuffers[imageIndex];
 
         renderPassInfo.renderArea.offset = { 0, 0 };
-        renderPassInfo.renderArea.extent.width = m_swapChain->GetExtentWidth();
-        renderPassInfo.renderArea.extent.height = m_swapChain->GetExtentHeight();
+        renderPassInfo.renderArea.extent = contextPtr->swapChain.extent;
 
-        VkClearValue clearColor = { {{0.0f, 0.0f, 0.0f, 1.0f}} };
+        VkClearValue clearColor = { {{1.0f, 0.0f, 0.0f, 1.0f}} };
         renderPassInfo.clearValueCount = 1;
         renderPassInfo.pClearValues = &clearColor;
 

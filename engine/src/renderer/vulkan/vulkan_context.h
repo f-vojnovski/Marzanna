@@ -29,12 +29,49 @@ namespace mz {
 		QueueFamilyIndices queueFamalies;
 		SwapChainSupportDetails swapChainDetails;
 
-		VkSurfaceKHR surface;
-
 		VkCommandPool graphicsCommandPool;
 	};
-	
+
+	struct VulkanSwapChainInfo {
+		VkSurfaceFormatKHR surfaceFormat;
+		VkPresentModeKHR presentMode;
+		VkExtent2D extent;
+		uint32_t imageCount;
+
+		VkSwapchainKHR handle;
+
+		std::vector<VkImage> images;
+		std::vector<VkImageView> imageViews;
+
+		std::vector<VkFramebuffer> framebuffers;
+
+		VkSemaphore imageAvailableSemaphore;
+		VkSemaphore renderFinishedSemaphore;
+		VkFence inFlightFence;
+		uint32_t nextImageIndex;
+	};
+
+	struct VulkanRenderPassInfo {
+		VkRenderPass handle;
+	};
+
+	struct VulkanPipelineInfo {
+		VkPipelineLayout layout;
+		VkPipeline handle;
+	};
+
 	struct VulkanContext {
+		VkInstance instance;
+		VkSurfaceKHR surface;
+		VkAllocationCallbacks* allocator;
+		const Window* window;
+		std::vector<const char*> validationLayers;
+		
 		VulkanDeviceInfo device;
+		
+		VulkanSwapChainInfo swapChain;
+
+		VulkanRenderPassInfo mainRenderPass;
+		VulkanPipelineInfo graphicsRenderingPipeline;
 	};
 }

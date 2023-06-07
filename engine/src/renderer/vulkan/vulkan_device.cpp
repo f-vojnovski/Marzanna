@@ -2,9 +2,16 @@
 #include "engine/src/core/log.h"
 
 namespace mz {
-	bool VulkanDevice::SelectPhysicalDevice(VkInstance instance)
+	VulkanDevice::VulkanDevice(std::shared_ptr<VulkanContext> contextPtr)
+	{
+		this->contextPtr = contextPtr;
+	}
+
+	bool VulkanDevice::SelectPhysicalDevice()
 	{
 		MZ_CORE_TRACE("Selecting physical device...");
+
+		auto instance = contextPtr->instance;
 
 		uint32_t deviceCount = 0;
 		vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
@@ -18,18 +25,18 @@ namespace mz {
 		vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
 
 		for (const auto& device : devices) {
-			QueueFamilyIndices indices = FindQueueFamilies(device, m_surface);
-			SwapChainSupportDetails swapChainSupportDetails = QuerySwapChainSupport(device, m_surface);
+			QueueFamilyIndices indices = FindQueueFamilies(device, contextPtr->surface);
+			SwapChainSupportDetails swapChainSupportDetails = QuerySwapChainSupport(device, contextPtr->surface);
 
 			if (IsDeviceSuitable(device, indices, swapChainSupportDetails)) {
-				m_physicalDevice = device;
-				m_queueFamilyIndices = indices;
-				m_swapChainSupportDetails = swapChainSupportDetails;
+				contextPtr->device.physicalDevice = device;
+				contextPtr->device.queueFamalies = indices;
+				contextPtr->device.swapChainDetails = swapChainSupportDetails;
 				break;
 			}
 		}
 
-		if (m_physicalDevice == VK_NULL_HANDLE) {
+		if (contextPtr->device.physicalDevice == VK_NULL_HANDLE) {
 			return false;
 		}
 
@@ -37,12 +44,12 @@ namespace mz {
 		return true;
 	}
 
-	bool VulkanDevice::CreateLogicalDevice(const std::vector<const char*> validationLayers, VkAllocationCallbacks* allocator) 
+	bool VulkanDevice::CreateLogicalDevice() 
 	{
 		MZ_CORE_TRACE("Creating logical device...");
 
 		std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
-		std::set<uint32_t> uniqueQueueFamilies = { m_queueFamilyIndices.graphicsFamily.value(), m_queueFamilyIndices.presentFamily.value() };
+		std::set<uint32_t> uniqueQueueFamilies = { contextPtr->device.queueFamalies.graphicsFamily.value(), contextPtr->device.queueFamalies.presentFamily.value() };
 
 		float queuePriority = 1.0f;
 		for (uint32_t queueFamily : uniqueQueueFamilies) {
@@ -64,31 +71,21 @@ namespace mz {
 
 		createInfo.pEnabledFeatures = &deviceFeatures;
 
-		createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
-		createInfo.ppEnabledLayerNames = validationLayers.data();
+		createInfo.enabledLayerCount = static_cast<uint32_t>(contextPtr->validationLayers.size());
+		createInfo.ppEnabledLayerNames = contextPtr->validationLayers.data();
 
 		createInfo.enabledExtensionCount = static_cast<uint32_t>(s_requiredDeviceExtensions.size());
 		createInfo.ppEnabledExtensionNames = s_requiredDeviceExtensions.data();
 
-		if (vkCreateDevice(m_physicalDevice, &createInfo, allocator, &m_device) != VK_SUCCESS) {
+		if (vkCreateDevice(contextPtr->device.physicalDevice, &createInfo, contextPtr->allocator, &contextPtr->device.logicalDevice) != VK_SUCCESS) {
 			return false;
 		}
 
-		vkGetDeviceQueue(m_device, m_queueFamilyIndices.graphicsFamily.value(), 0, &m_graphicsQueue);
-		vkGetDeviceQueue(m_device, m_queueFamilyIndices.presentFamily.value(), 0, &m_presentQueue);
+		vkGetDeviceQueue(contextPtr->device.logicalDevice, contextPtr->device.queueFamalies.graphicsFamily.value(), 0, &contextPtr->device.graphicsQueue);
+		vkGetDeviceQueue(contextPtr->device.logicalDevice, contextPtr->device.queueFamalies.presentFamily.value(), 0, &contextPtr->device.presentQueue);
 
 		MZ_CORE_INFO("Created logical device!");
 		return true;
-	}
-
-	VulkanDevice::VulkanDevice(VkSurfaceKHR surface)
-	{
-		m_physicalDevice = VK_NULL_HANDLE;
-		m_device = VK_NULL_HANDLE;
-		m_presentQueue = VK_NULL_HANDLE;
-		m_graphicsQueue = VK_NULL_HANDLE;
-		m_graphicsCommandPool = VK_NULL_HANDLE;
-		m_surface = surface;
 	}
 
 	SwapChainSupportDetails VulkanDevice::QuerySwapChainSupport(VkPhysicalDevice device, VkSurfaceKHR surface)
@@ -116,9 +113,9 @@ namespace mz {
 		return details;
 	}
 
-	void VulkanDevice::Shutdown(VkAllocationCallbacks* allocator) {
+	void VulkanDevice::Shutdown() {
 		MZ_CORE_TRACE("Destroying device...");
-		vkDestroyDevice(m_device, allocator);
+		vkDestroyDevice(contextPtr->device.logicalDevice, contextPtr->allocator);
 	}
 	
 	QueueFamilyIndices VulkanDevice::FindQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surface)
@@ -201,9 +198,9 @@ namespace mz {
 		VkCommandPoolCreateInfo poolInfo{};
 		poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
 		poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-		poolInfo.queueFamilyIndex = m_queueFamilyIndices.graphicsFamily.value();
+		poolInfo.queueFamilyIndex = contextPtr->device.queueFamalies.graphicsFamily.value();
 
-		if (vkCreateCommandPool(m_device, &poolInfo, nullptr, &m_graphicsCommandPool) != VK_SUCCESS) {
+		if (vkCreateCommandPool(contextPtr->device.logicalDevice, &poolInfo, nullptr, &contextPtr->device.graphicsCommandPool) != VK_SUCCESS) {
 			MZ_CORE_ERROR("Failed to create graphics command pool!");
 			return false;
 		}
@@ -213,6 +210,6 @@ namespace mz {
 
 	void VulkanDevice::DestroyGraphicsCommandPool() {
 		MZ_CORE_TRACE("Destroying graphics command pool...");
-		vkDestroyCommandPool(m_device, m_graphicsCommandPool, nullptr);
+		vkDestroyCommandPool(contextPtr->device.logicalDevice, contextPtr->device.graphicsCommandPool, nullptr);
 	}
 }

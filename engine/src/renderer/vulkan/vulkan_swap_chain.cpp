@@ -2,40 +2,37 @@
 #include "vulkan_utils.h"
 
 namespace mz {
-	VulkanSwapChain::VulkanSwapChain(VkSurfaceKHR surface, VkDevice device, SwapChainSupportDetails& swapChainSupportDetails, QueueFamilyIndices& queueFamilyIndices)
-		: m_swapChainSupportDetails(swapChainSupportDetails), m_queueFamilyIndices(queueFamilyIndices)
-	{
-		m_surface = surface;
-		m_device = device;
+	VulkanSwapChain::VulkanSwapChain(std::shared_ptr<VulkanContext> contextPtr) {
+		this->contextPtr = contextPtr;
 	}
 
 	void VulkanSwapChain::Create()
 	{
 		MZ_CORE_TRACE("Creating swap chain...");
 
-		ChooseSurfaceFormat(m_swapChainSupportDetails.formats);
-		ChoosePresentMode(m_swapChainSupportDetails.presentModes);
-		ChooseExtent(m_swapChainSupportDetails.capabilities);
+		ChooseSurfaceFormat();
+		ChoosePresentMode();
+		ChooseExtent();
 
-		m_imageCount = m_swapChainSupportDetails.capabilities.minImageCount + 1;
-		if (m_swapChainSupportDetails.capabilities.maxImageCount > 0 && m_imageCount > m_swapChainSupportDetails.capabilities.maxImageCount) {
-			m_imageCount = m_swapChainSupportDetails.capabilities.maxImageCount;
+		contextPtr->swapChain.imageCount = contextPtr->device.swapChainDetails.capabilities.minImageCount + 1;
+		if (contextPtr->device.swapChainDetails.capabilities.maxImageCount > 0 && contextPtr->swapChain.imageCount > contextPtr->device.swapChainDetails.capabilities.maxImageCount) {
+			contextPtr->swapChain.imageCount = contextPtr->device.swapChainDetails.capabilities.maxImageCount;
 		}
 
 		VkSwapchainCreateInfoKHR createInfo{};
 		createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-		createInfo.surface = m_surface;
+		createInfo.surface = contextPtr->surface;
 
-		createInfo.minImageCount = m_imageCount;
-		createInfo.imageFormat = m_surfaceFormat.format;
-		createInfo.imageColorSpace = m_surfaceFormat.colorSpace;
-		createInfo.imageExtent = m_extent;
+		createInfo.minImageCount = contextPtr->swapChain.imageCount;
+		createInfo.imageFormat = contextPtr->swapChain.surfaceFormat.format;
+		createInfo.imageColorSpace = contextPtr->swapChain.surfaceFormat.colorSpace;
+		createInfo.imageExtent = contextPtr->swapChain.extent;
 		createInfo.imageArrayLayers = 1;
 		createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-		uint32_t queueFamilyIndices[] = { m_queueFamilyIndices.graphicsFamily.value(), m_queueFamilyIndices.presentFamily.value() };
+		uint32_t queueFamilyIndices[] = { contextPtr->device.queueFamalies.graphicsFamily.value(), contextPtr->device.queueFamalies.presentFamily.value() };
 
-		if (m_queueFamilyIndices.graphicsFamily != m_queueFamilyIndices.presentFamily) {
+		if (contextPtr->device.queueFamalies.graphicsFamily != contextPtr->device.queueFamalies.presentFamily) {
 			createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
 			createInfo.queueFamilyIndexCount = 2;
 			createInfo.pQueueFamilyIndices = queueFamilyIndices;
@@ -46,48 +43,48 @@ namespace mz {
 			createInfo.pQueueFamilyIndices = nullptr; // Optional
 		}
 
-		createInfo.preTransform = m_swapChainSupportDetails.capabilities.currentTransform;
+		createInfo.preTransform = contextPtr->device.swapChainDetails.capabilities.currentTransform;
 		createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
 
-		createInfo.presentMode = m_presentMode;
+		createInfo.presentMode = contextPtr->swapChain.presentMode;
 		createInfo.clipped = VK_TRUE;
 
 		createInfo.oldSwapchain = VK_NULL_HANDLE;
 
-		if (vkCreateSwapchainKHR(m_device, &createInfo, nullptr, &m_swapChain) != VK_SUCCESS) {
+		if (vkCreateSwapchainKHR(contextPtr->device.logicalDevice, &createInfo, nullptr, &contextPtr->swapChain.handle) != VK_SUCCESS) {
 			MZ_CORE_ERROR("Failed to create swap chain!");
 			return;
 		}
 
-		vkGetSwapchainImagesKHR(m_device, m_swapChain, &m_imageCount, nullptr);
-		m_images.resize(m_imageCount);
-		vkGetSwapchainImagesKHR(m_device, m_swapChain, &m_imageCount, m_images.data());
+		vkGetSwapchainImagesKHR(contextPtr->device.logicalDevice, contextPtr->swapChain.handle, &contextPtr->swapChain.imageCount, nullptr);
+		contextPtr->swapChain.images.resize(contextPtr->swapChain.imageCount);
+		vkGetSwapchainImagesKHR(contextPtr->device.logicalDevice, contextPtr->swapChain.handle, &contextPtr->swapChain.imageCount, contextPtr->swapChain.images.data());
 
 		CreateImageViews();
 
 		MZ_CORE_INFO("Swap chain created!");
 	}
 	
-	void VulkanSwapChain::Destroy(VkAllocationCallbacks* allocator)
+	void VulkanSwapChain::Destroy()
 	{
-		for (auto imageView : m_imageViews) {
-			vkDestroyImageView(m_device, imageView, allocator);
+		for (auto imageView : contextPtr->swapChain.imageViews) {
+			vkDestroyImageView(contextPtr->device.logicalDevice, imageView, contextPtr->allocator);
 		}
 
-		vkDestroySwapchainKHR(m_device, m_swapChain, allocator);
+		vkDestroySwapchainKHR(contextPtr->device.logicalDevice, contextPtr->swapChain.handle, contextPtr->allocator);
 	}
 
 	void VulkanSwapChain::CreateImageViews()
 	{
-		m_imageViews.resize(m_images.size());
+		contextPtr->swapChain.imageViews.resize(contextPtr->swapChain.images.size());
 
-		for (size_t i = 0; i < m_images.size(); i++) {
+		for (size_t i = 0; i < contextPtr->swapChain.images.size(); i++) {
 			VkImageViewCreateInfo createInfo{};
 			createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-			createInfo.image = m_images[i];
+			createInfo.image = contextPtr->swapChain.images[i];
 
 			createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-			createInfo.format = m_surfaceFormat.format;
+			createInfo.format = contextPtr->swapChain.surfaceFormat.format;
 
 			createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
 			createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
@@ -100,17 +97,17 @@ namespace mz {
 			createInfo.subresourceRange.baseArrayLayer = 0;
 			createInfo.subresourceRange.layerCount = 1;
 
-			VK_CHECK(vkCreateImageView(m_device, &createInfo, nullptr, &m_imageViews[i]));
+			VK_CHECK(vkCreateImageView(contextPtr->device.logicalDevice, &createInfo, contextPtr->allocator, &contextPtr->swapChain.imageViews[i]));
 		}
 	}
 
 	bool VulkanSwapChain::CreateFramebuffers(VkRenderPass renderPass)
 	{
-		m_framebuffers.resize(m_imageViews.size());
+		contextPtr->swapChain.framebuffers.resize(contextPtr->swapChain.imageViews.size());
 
-		for (size_t i = 0; i < m_imageViews.size(); i++) {
+		for (size_t i = 0; i < contextPtr->swapChain.imageViews.size(); i++) {
 			VkImageView attachments[] = {
-				m_imageViews[i]
+				contextPtr->swapChain.imageViews[i]
 			};
 
 			VkFramebufferCreateInfo framebufferInfo{};
@@ -118,11 +115,11 @@ namespace mz {
 			framebufferInfo.renderPass = renderPass;
 			framebufferInfo.attachmentCount = 1;
 			framebufferInfo.pAttachments = attachments;
-			framebufferInfo.width = m_extent.width;
-			framebufferInfo.height = m_extent.height;
+			framebufferInfo.width = contextPtr->swapChain.extent.width;
+			framebufferInfo.height = contextPtr->swapChain.extent.height;
 			framebufferInfo.layers = 1;
 
-			if (vkCreateFramebuffer(m_device, &framebufferInfo, nullptr, &m_framebuffers[i]) != VK_SUCCESS) {
+			if (vkCreateFramebuffer(contextPtr->device.logicalDevice, &framebufferInfo, contextPtr->allocator, &contextPtr->swapChain.framebuffers[i]) != VK_SUCCESS) {
 				MZ_CORE_ERROR("Failed to create framebuffer!");
 				return false;
 			}
@@ -133,8 +130,8 @@ namespace mz {
 	void VulkanSwapChain::DestroyFramebuffers()
 	{
 		MZ_CORE_TRACE("Destroying framebuffers...");
-		for(auto framebuffer : m_framebuffers) {
-			vkDestroyFramebuffer(m_device, framebuffer, nullptr);
+		for(auto framebuffer : contextPtr->swapChain.framebuffers) {
+			vkDestroyFramebuffer(contextPtr->device.logicalDevice, framebuffer, contextPtr->allocator);
 		}
 	}
 
@@ -145,11 +142,11 @@ namespace mz {
 		VkSemaphoreCreateInfo semaphoreInfo{};
 		semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 		
-		if (vkCreateSemaphore(m_device, &semaphoreInfo, nullptr, &m_imageAvailableSemaphore) != VK_SUCCESS) {
+		if (vkCreateSemaphore(contextPtr->device.logicalDevice, &semaphoreInfo, contextPtr->allocator, &contextPtr->swapChain.imageAvailableSemaphore) != VK_SUCCESS) {
 			return false;
 		}
 		
-		if (vkCreateSemaphore(m_device, &semaphoreInfo, nullptr, &m_renderFinishedSemaphore) != VK_SUCCESS) {
+		if (vkCreateSemaphore(contextPtr->device.logicalDevice, &semaphoreInfo, contextPtr->allocator, &contextPtr->swapChain.renderFinishedSemaphore) != VK_SUCCESS) {
 			return false;
 		}
 
@@ -157,10 +154,9 @@ namespace mz {
 		fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
 		fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-		if (vkCreateFence(m_device, &fenceInfo, nullptr, &m_inFlightFence) != VK_SUCCESS) {
+		if (vkCreateFence(contextPtr->device.logicalDevice, &fenceInfo, contextPtr->allocator, &contextPtr->swapChain.inFlightFence) != VK_SUCCESS) {
 			return false;
 		}
-
 
 		MZ_CORE_INFO("Created swap chain sync objects!");
 
@@ -171,65 +167,73 @@ namespace mz {
 	{
 		MZ_CORE_TRACE("Destroying sync objects...");
 
-		vkDestroySemaphore(m_device, m_imageAvailableSemaphore, nullptr);
-		vkDestroySemaphore(m_device, m_renderFinishedSemaphore, nullptr);
-		vkDestroyFence(m_device, m_inFlightFence, nullptr);
+		vkDestroySemaphore(contextPtr->device.logicalDevice, contextPtr->swapChain.imageAvailableSemaphore, contextPtr->allocator);
+		vkDestroySemaphore(contextPtr->device.logicalDevice, contextPtr->swapChain.renderFinishedSemaphore, contextPtr->allocator);
+		vkDestroyFence(contextPtr->device.logicalDevice, contextPtr->swapChain.inFlightFence, contextPtr->allocator);
 	}
 
 	bool VulkanSwapChain::AcquireNextImageIndex()
 	{
 		VkResult result = vkAcquireNextImageKHR(
-			m_device,
-			m_swapChain,
+			contextPtr->device.logicalDevice,
+			contextPtr->swapChain.handle,
 			UINT64_MAX,
-			m_imageAvailableSemaphore,
+			contextPtr->swapChain.imageAvailableSemaphore,
 			VK_NULL_HANDLE,
-			&m_nextImageIndex);
+			&contextPtr->swapChain.nextImageIndex);
 
 		if (result != VK_SUCCESS) {
 			return false;
 		}
 	}
 
-	void VulkanSwapChain::ChooseSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats)
+	void VulkanSwapChain::ChooseSurfaceFormat()
 	{
-		for (const auto& availableFormat : availableFormats) {
+		for (const auto& availableFormat : contextPtr->device.swapChainDetails.formats) {
 			if (availableFormat.format == VK_FORMAT_B8G8R8A8_SRGB && availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
-				m_surfaceFormat = availableFormat;
+				contextPtr->swapChain.surfaceFormat = availableFormat;
 				return;
 			}
 		}
-		m_surfaceFormat = availableFormats[0];
+		contextPtr->swapChain.surfaceFormat = contextPtr->device.swapChainDetails.formats[0];
 	}
 
-	void VulkanSwapChain::ChoosePresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes)
+	void VulkanSwapChain::ChoosePresentMode()
 	{
-		for (const auto& availablePresentMode : availablePresentModes) {
+		for (const auto& availablePresentMode : contextPtr->device.swapChainDetails.presentModes) {
 			if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR) {
-				m_presentMode = availablePresentMode;
+				contextPtr->swapChain.presentMode = availablePresentMode;
 				return;
 			}
 		}
 
-		m_presentMode = VK_PRESENT_MODE_FIFO_KHR;
+		contextPtr->swapChain.presentMode = VK_PRESENT_MODE_FIFO_KHR;
 	}
 	
-	void VulkanSwapChain::ChooseExtent(const VkSurfaceCapabilitiesKHR& capabilities)
+	void VulkanSwapChain::ChooseExtent()
 	{
-		if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()) {
-			m_extent = capabilities.currentExtent;
+		if (contextPtr->device.swapChainDetails.capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()) {
+			contextPtr->swapChain.extent = contextPtr->device.swapChainDetails.capabilities.currentExtent;
 		}
 		else {
 			unsigned int height = Application::Get().GetWindow().GetHeight();
 			unsigned int width = Application::Get().GetWindow().GetWidth();
 
-			m_extent = {
+			contextPtr->swapChain.extent = {
 				static_cast<uint32_t>(width),
 				static_cast<uint32_t>(height)
 			};
 
-			m_extent.width = std::clamp(m_extent.width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
-			m_extent.height = std::clamp(m_extent.height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
+			contextPtr->swapChain.extent.width = 
+				std::clamp(
+					contextPtr->swapChain.extent.width, 
+					contextPtr->device.swapChainDetails.capabilities.minImageExtent.width, 
+					contextPtr->device.swapChainDetails.capabilities.maxImageExtent.width);
+			contextPtr->swapChain.extent.height =
+				std::clamp(
+					contextPtr->swapChain.extent.height,
+					contextPtr->device.swapChainDetails.capabilities.minImageExtent.height,
+					contextPtr->device.swapChainDetails.capabilities.maxImageExtent.height);
 		}
 	}
 }

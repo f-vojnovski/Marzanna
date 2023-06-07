@@ -19,17 +19,12 @@ namespace mz {
 		virtual bool EndFrame() override;
 
 	private:
-		VkInstance m_instance;
-		VkAllocationCallbacks* m_allocator;
+		std::shared_ptr<VulkanContext> contextPtr;
 		VkDebugUtilsMessengerEXT m_debugMessegner;
 		std::unique_ptr<VulkanDevice> m_device;
 		std::shared_ptr<VulkanSwapChain> m_swapChain;
 		std::unique_ptr<VulkanPipeline> m_pipeline;
 		std::unique_ptr<VulkanRenderPass> m_mainRenderPass;
-		std::vector<const char*> m_validationLayers;
-		VkSurfaceKHR m_surface;
-
-		const Window* m_window;
 
 		static VKAPI_ATTR VkBool32 VKAPI_CALL VulkanDebugCallback(
 			VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
