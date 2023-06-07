@@ -43,8 +43,6 @@ namespace mz {
 		std::vector<VkImage> images;
 		std::vector<VkImageView> imageViews;
 
-		std::vector<VkFramebuffer> framebuffers;
-
 		VkSemaphore imageAvailableSemaphore;
 		VkSemaphore renderFinishedSemaphore;
 		VkFence inFlightFence;
@@ -53,6 +51,7 @@ namespace mz {
 
 	struct VulkanRenderPassInfo {
 		VkRenderPass handle;
+		std::vector<VkFramebuffer> framebuffers;
 	};
 
 	struct VulkanPipelineInfo {

@@ -2,7 +2,6 @@
 
 #include "engine/src/mzpch.h"
 #include "vulkan_swap_chain.h"
-#include "vulkan_command_buffer.h"
 #include "vulkan_context.h"
 
 namespace mz {
@@ -13,7 +12,9 @@ namespace mz {
 		VulkanRenderPass(std::shared_ptr<VulkanContext> contextPtr);
 		bool Create();
 		void Destroy();
-		void Begin(VulkanCommandBuffer& commandBuffer, uint32_t imageIndex);
-		void End(VulkanCommandBuffer& commandBuffer, uint32_t imageIndex);
+		void Begin(VkCommandBuffer commandBuffer, uint32_t imageIndex);
+		void End(VkCommandBuffer commandBuffer, uint32_t imageIndex);
+		bool CreateFramebuffers();
+		void DestroyFramebuffers();
 	};
 }

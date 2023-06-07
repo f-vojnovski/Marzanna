@@ -16,8 +16,6 @@ namespace mz {
 		void Create();
 		void Destroy();
 		void CreateImageViews();
-		bool CreateFramebuffers(VkRenderPass renderPass);
-		void DestroyFramebuffers();
 		bool CreateSyncObjects();
 		void DestroySyncObjects();
 		bool AcquireNextImageIndex();

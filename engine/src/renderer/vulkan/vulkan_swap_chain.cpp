@@ -101,40 +101,6 @@ namespace mz {
 		}
 	}
 
-	bool VulkanSwapChain::CreateFramebuffers(VkRenderPass renderPass)
-	{
-		contextPtr->swapChain.framebuffers.resize(contextPtr->swapChain.imageViews.size());
-
-		for (size_t i = 0; i < contextPtr->swapChain.imageViews.size(); i++) {
-			VkImageView attachments[] = {
-				contextPtr->swapChain.imageViews[i]
-			};
-
-			VkFramebufferCreateInfo framebufferInfo{};
-			framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-			framebufferInfo.renderPass = renderPass;
-			framebufferInfo.attachmentCount = 1;
-			framebufferInfo.pAttachments = attachments;
-			framebufferInfo.width = contextPtr->swapChain.extent.width;
-			framebufferInfo.height = contextPtr->swapChain.extent.height;
-			framebufferInfo.layers = 1;
-
-			if (vkCreateFramebuffer(contextPtr->device.logicalDevice, &framebufferInfo, contextPtr->allocator, &contextPtr->swapChain.framebuffers[i]) != VK_SUCCESS) {
-				MZ_CORE_ERROR("Failed to create framebuffer!");
-				return false;
-			}
-		}
-	}
-
-	
-	void VulkanSwapChain::DestroyFramebuffers()
-	{
-		MZ_CORE_TRACE("Destroying framebuffers...");
-		for(auto framebuffer : contextPtr->swapChain.framebuffers) {
-			vkDestroyFramebuffer(contextPtr->device.logicalDevice, framebuffer, contextPtr->allocator);
-		}
-	}
-
 	bool VulkanSwapChain::CreateSyncObjects()
 	{
 		MZ_CORE_TRACE("Creating swap chain sync objects...");

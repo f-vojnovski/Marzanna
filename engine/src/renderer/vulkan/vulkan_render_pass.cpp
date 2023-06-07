@@ -62,12 +62,12 @@ namespace mz {
 		vkDestroyRenderPass(contextPtr->device.logicalDevice, contextPtr->mainRenderPass.handle, contextPtr->allocator);
 	}
     
-    void VulkanRenderPass::Begin(VulkanCommandBuffer& commandBuffer, uint32_t imageIndex)
+    void VulkanRenderPass::Begin(VkCommandBuffer commandBuffer, uint32_t imageIndex)
     {
         VkRenderPassBeginInfo renderPassInfo{};
         renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
         renderPassInfo.renderPass = contextPtr->mainRenderPass.handle;
-        renderPassInfo.framebuffer = contextPtr->swapChain.framebuffers[imageIndex];
+        renderPassInfo.framebuffer = contextPtr->mainRenderPass.framebuffers[imageIndex];
 
         renderPassInfo.renderArea.offset = { 0, 0 };
         renderPassInfo.renderArea.extent = contextPtr->swapChain.extent;
@@ -76,11 +76,44 @@ namespace mz {
         renderPassInfo.clearValueCount = 1;
         renderPassInfo.pClearValues = &clearColor;
 
-        vkCmdBeginRenderPass(commandBuffer.GetHandle(), &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+        vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
     }
     
-    void VulkanRenderPass::End(VulkanCommandBuffer& commandBuffer, uint32_t imageIndex)
+    void VulkanRenderPass::End(VkCommandBuffer commandBuffer, uint32_t imageIndex)
     {
-        vkCmdEndRenderPass(commandBuffer.GetHandle());
+        vkCmdEndRenderPass(commandBuffer);
+    }
+
+    bool VulkanRenderPass::CreateFramebuffers()
+    {
+        contextPtr->mainRenderPass.framebuffers.resize(contextPtr->swapChain.imageViews.size());
+
+        for (size_t i = 0; i < contextPtr->swapChain.imageViews.size(); i++) {
+            VkImageView attachments[] = {
+                contextPtr->swapChain.imageViews[i]
+            };
+
+            VkFramebufferCreateInfo framebufferInfo{};
+            framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+            framebufferInfo.renderPass = contextPtr->mainRenderPass.handle;
+            framebufferInfo.attachmentCount = 1;
+            framebufferInfo.pAttachments = attachments;
+            framebufferInfo.width = contextPtr->swapChain.extent.width;
+            framebufferInfo.height = contextPtr->swapChain.extent.height;
+            framebufferInfo.layers = 1;
+
+            if (vkCreateFramebuffer(contextPtr->device.logicalDevice, &framebufferInfo, contextPtr->allocator, &contextPtr->mainRenderPass.framebuffers[i]) != VK_SUCCESS) {
+                MZ_CORE_ERROR("Failed to create framebuffer!");
+                return false;
+            }
+        }
+    }
+
+    void VulkanRenderPass::DestroyFramebuffers()
+    {
+        MZ_CORE_TRACE("Destroying framebuffers...");
+        for (auto framebuffer : contextPtr->mainRenderPass.framebuffers) {
+            vkDestroyFramebuffer(contextPtr->device.logicalDevice, framebuffer, contextPtr->allocator);
+        }
     }
 }

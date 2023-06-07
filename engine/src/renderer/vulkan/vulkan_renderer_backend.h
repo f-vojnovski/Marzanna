@@ -7,7 +7,6 @@
 #include "vulkan_swap_chain.h"
 #include "vulkan_pipeline.h"
 #include "vulkan_render_pass.h"
-#include "vulkan_command_buffer.h"
 
 namespace mz {
 	class VulkanRendererBackend : public RendererBackend {
@@ -34,8 +33,8 @@ namespace mz {
 
 		inline static bool TEMPORARY_TEST_COMMAND_BUFFER_ALLOCATED = false;
 
-		// TODO: Move
-		std::unique_ptr<VulkanCommandBuffer> m_buffer;
+		VkCommandBuffer m_buffer;
+		bool CreateCommandBuffers();
 		void RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
 	};
 }

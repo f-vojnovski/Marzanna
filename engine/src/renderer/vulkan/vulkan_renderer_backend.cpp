@@ -1,6 +1,5 @@
 #include "vulkan_renderer_backend.h"
 #include "vulkan_utils.h"
-#include "vulkan_command_buffer.h"
 
 namespace mz {
 	VulkanRendererBackend::VulkanRendererBackend(const RendererBackendArgs args) 
@@ -133,7 +132,7 @@ namespace mz {
 		}
 
 		// Framebuffers
-		m_swapChain->CreateFramebuffers(contextPtr->mainRenderPass.handle);
+		m_mainRenderPass->CreateFramebuffers();
 
 		// Command pool
 		if (!m_device->CreateGraphicsCommandPool()) {
@@ -142,8 +141,7 @@ namespace mz {
 		}
 
 		// Command buffer {IMPL LATER}
-		m_buffer = std::make_unique<VulkanCommandBuffer>(contextPtr->device.graphicsCommandPool, contextPtr->device.logicalDevice);
-		m_buffer->Create();
+		CreateCommandBuffers();
 
 		// Sync objects
 		if (!m_swapChain->CreateSyncObjects()) {
@@ -162,7 +160,7 @@ namespace mz {
 
 		m_device->DestroyGraphicsCommandPool();
 
-		m_swapChain->DestroyFramebuffers();
+		m_mainRenderPass->DestroyFramebuffers();
 
 		m_pipeline->Destroy();
 
@@ -194,7 +192,7 @@ namespace mz {
 		m_swapChain->AcquireNextImageIndex();
 		uint32_t imageIndex = contextPtr->swapChain.nextImageIndex;
 
-		auto commandBuffer = m_buffer->GetHandle();
+		auto commandBuffer = m_buffer;
 
 		vkResetCommandBuffer(commandBuffer, 0);
 
@@ -281,7 +279,7 @@ namespace mz {
 		VkRenderPassBeginInfo renderPassInfo{};
 		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 		renderPassInfo.renderPass = contextPtr->mainRenderPass.handle;
-		renderPassInfo.framebuffer = contextPtr->swapChain.framebuffers[imageIndex];
+		renderPassInfo.framebuffer = contextPtr->mainRenderPass.framebuffers[imageIndex];
 		renderPassInfo.renderArea.offset = { 0, 0 };
 		renderPassInfo.renderArea.extent = contextPtr->swapChain.extent;
 
@@ -312,5 +310,18 @@ namespace mz {
 		vkCmdEndRenderPass(commandBuffer);
 
 		VK_CHECK(vkEndCommandBuffer(commandBuffer));
+	}
+
+	bool VulkanRendererBackend::CreateCommandBuffers() {
+		VkCommandBufferAllocateInfo allocInfo{};
+		allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+		allocInfo.commandPool = contextPtr->device.graphicsCommandPool;
+		allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+		allocInfo.commandBufferCount = 1;
+
+		if (vkAllocateCommandBuffers(contextPtr->device.logicalDevice, &allocInfo, &m_buffer) != VK_SUCCESS) {
+			MZ_CORE_CRITICAL("Failed to allocate command buffer!");
+			return false;
+		}
 	}
 }
