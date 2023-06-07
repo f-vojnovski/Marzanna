@@ -3,6 +3,8 @@
 #include "engine/src/mzpch.h"
 
 namespace mz {
+#define MAX_FRAMES_IN_FLIGHT 2
+
 	// Device
 	struct QueueFamilyIndices {
 		std::optional<uint32_t> graphicsFamily;
@@ -43,9 +45,9 @@ namespace mz {
 		std::vector<VkImage> images;
 		std::vector<VkImageView> imageViews;
 
-		VkSemaphore imageAvailableSemaphore;
-		VkSemaphore renderFinishedSemaphore;
-		VkFence inFlightFence;
+		std::vector<VkSemaphore> imageAvailableSemaphores;
+		std::vector<VkSemaphore> renderFinishedSemaphores;
+		std::vector<VkFence> inFlightFences;
 		uint32_t nextImageIndex;
 	};
 
@@ -72,5 +74,9 @@ namespace mz {
 
 		VulkanRenderPassInfo mainRenderPass;
 		VulkanPipelineInfo graphicsRenderingPipeline;
+
+		std::vector<VkCommandBuffer> commandBuffers;
+
+		uint32_t currentFrame = 0;
 	};
 }

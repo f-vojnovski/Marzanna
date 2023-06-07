@@ -186,13 +186,16 @@ namespace mz {
 	
 	bool VulkanRendererBackend::BeginFrame()
 	{
-		vkWaitForFences(contextPtr->device.logicalDevice, 1, &contextPtr->swapChain.inFlightFence, VK_TRUE, UINT64_MAX);
-		vkResetFences(contextPtr->device.logicalDevice, 1, &contextPtr->swapChain.inFlightFence);
+		VkSemaphore imageAvailableSemaphore = contextPtr->swapChain.imageAvailableSemaphores[contextPtr->currentFrame];
+		VkSemaphore renderFinishedSemaphore = contextPtr->swapChain.renderFinishedSemaphores[contextPtr->currentFrame];
+		VkFence inFlightFence = contextPtr->swapChain.inFlightFences[contextPtr->currentFrame];
+		VkCommandBuffer commandBuffer = contextPtr->commandBuffers[contextPtr->currentFrame];
+
+		vkWaitForFences(contextPtr->device.logicalDevice, 1, &inFlightFence, VK_TRUE, UINT64_MAX);
+		vkResetFences(contextPtr->device.logicalDevice, 1, &inFlightFence);
 
 		m_swapChain->AcquireNextImageIndex();
 		uint32_t imageIndex = contextPtr->swapChain.nextImageIndex;
-
-		auto commandBuffer = m_buffer;
 
 		vkResetCommandBuffer(commandBuffer, 0);
 
@@ -201,7 +204,7 @@ namespace mz {
 		VkSubmitInfo submitInfo{};
 		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
-		VkSemaphore waitSemaphores[] = { contextPtr->swapChain.imageAvailableSemaphore };
+		VkSemaphore waitSemaphores[] = { imageAvailableSemaphore };
 		VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
 		submitInfo.waitSemaphoreCount = 1;
 		submitInfo.pWaitSemaphores = waitSemaphores;
@@ -210,11 +213,11 @@ namespace mz {
 		submitInfo.commandBufferCount = 1;
 		submitInfo.pCommandBuffers = &commandBuffer;
 
-		VkSemaphore signalSemaphores[] = { contextPtr->swapChain.renderFinishedSemaphore };
+		VkSemaphore signalSemaphores[] = { renderFinishedSemaphore };
 		submitInfo.signalSemaphoreCount = 1;
 		submitInfo.pSignalSemaphores = signalSemaphores;
 
-		VK_CHECK(vkQueueSubmit(contextPtr->device.graphicsQueue, 1, &submitInfo, contextPtr->swapChain.inFlightFence));
+		VK_CHECK(vkQueueSubmit(contextPtr->device.graphicsQueue, 1, &submitInfo, inFlightFence));
 
 		VkSubpassDependency dependency{};
 		dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
@@ -236,6 +239,7 @@ namespace mz {
 
 		vkQueuePresentKHR(contextPtr->device.presentQueue, &presentInfo);
 
+		contextPtr->currentFrame = (contextPtr->currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 		return true;
 	}
 	
@@ -313,13 +317,15 @@ namespace mz {
 	}
 
 	bool VulkanRendererBackend::CreateCommandBuffers() {
+		contextPtr->commandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
+
 		VkCommandBufferAllocateInfo allocInfo{};
 		allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 		allocInfo.commandPool = contextPtr->device.graphicsCommandPool;
 		allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-		allocInfo.commandBufferCount = 1;
+		allocInfo.commandBufferCount = MAX_FRAMES_IN_FLIGHT;
 
-		if (vkAllocateCommandBuffers(contextPtr->device.logicalDevice, &allocInfo, &m_buffer) != VK_SUCCESS) {
+		if (vkAllocateCommandBuffers(contextPtr->device.logicalDevice, &allocInfo, contextPtr->commandBuffers.data()) != VK_SUCCESS) {
 			MZ_CORE_CRITICAL("Failed to allocate command buffer!");
 			return false;
 		}

@@ -104,24 +104,25 @@ namespace mz {
 	bool VulkanSwapChain::CreateSyncObjects()
 	{
 		MZ_CORE_TRACE("Creating swap chain sync objects...");
-		
+
+		contextPtr->swapChain.imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+		contextPtr->swapChain.renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+		contextPtr->swapChain.inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
+
 		VkSemaphoreCreateInfo semaphoreInfo{};
 		semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-		
-		if (vkCreateSemaphore(contextPtr->device.logicalDevice, &semaphoreInfo, contextPtr->allocator, &contextPtr->swapChain.imageAvailableSemaphore) != VK_SUCCESS) {
-			return false;
-		}
-		
-		if (vkCreateSemaphore(contextPtr->device.logicalDevice, &semaphoreInfo, contextPtr->allocator, &contextPtr->swapChain.renderFinishedSemaphore) != VK_SUCCESS) {
-			return false;
-		}
 
 		VkFenceCreateInfo fenceInfo{};
 		fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
 		fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-		if (vkCreateFence(contextPtr->device.logicalDevice, &fenceInfo, contextPtr->allocator, &contextPtr->swapChain.inFlightFence) != VK_SUCCESS) {
-			return false;
+		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+			if (vkCreateSemaphore(contextPtr->device.logicalDevice, &semaphoreInfo, nullptr, &contextPtr->swapChain.imageAvailableSemaphores[i]) != VK_SUCCESS ||
+				vkCreateSemaphore(contextPtr->device.logicalDevice, &semaphoreInfo, nullptr, &contextPtr->swapChain.renderFinishedSemaphores[i]) != VK_SUCCESS ||
+				vkCreateFence(contextPtr->device.logicalDevice, &fenceInfo, nullptr, &contextPtr->swapChain.inFlightFences[i]) != VK_SUCCESS) {
+
+				return false;
+			}
 		}
 
 		MZ_CORE_INFO("Created swap chain sync objects!");
@@ -133,9 +134,11 @@ namespace mz {
 	{
 		MZ_CORE_TRACE("Destroying sync objects...");
 
-		vkDestroySemaphore(contextPtr->device.logicalDevice, contextPtr->swapChain.imageAvailableSemaphore, contextPtr->allocator);
-		vkDestroySemaphore(contextPtr->device.logicalDevice, contextPtr->swapChain.renderFinishedSemaphore, contextPtr->allocator);
-		vkDestroyFence(contextPtr->device.logicalDevice, contextPtr->swapChain.inFlightFence, contextPtr->allocator);
+		for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+			vkDestroySemaphore(contextPtr->device.logicalDevice, contextPtr->swapChain.imageAvailableSemaphores[i], contextPtr->allocator);
+			vkDestroySemaphore(contextPtr->device.logicalDevice, contextPtr->swapChain.renderFinishedSemaphores[i], contextPtr->allocator);
+			vkDestroyFence(contextPtr->device.logicalDevice, contextPtr->swapChain.inFlightFences[i], contextPtr->allocator);
+		}
 	}
 
 	bool VulkanSwapChain::AcquireNextImageIndex()
@@ -144,7 +147,7 @@ namespace mz {
 			contextPtr->device.logicalDevice,
 			contextPtr->swapChain.handle,
 			UINT64_MAX,
-			contextPtr->swapChain.imageAvailableSemaphore,
+			contextPtr->swapChain.imageAvailableSemaphores[contextPtr->currentFrame],
 			VK_NULL_HANDLE,
 			&contextPtr->swapChain.nextImageIndex);
 

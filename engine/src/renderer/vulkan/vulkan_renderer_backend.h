@@ -31,9 +31,6 @@ namespace mz {
 			const VkDebugUtilsMessengerCallbackDataEXT* callback_data,
 			void* user_data);
 
-		inline static bool TEMPORARY_TEST_COMMAND_BUFFER_ALLOCATED = false;
-
-		VkCommandBuffer m_buffer;
 		bool CreateCommandBuffers();
 		void RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
 	};
