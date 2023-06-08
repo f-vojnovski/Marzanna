@@ -20,8 +20,28 @@ namespace mz {
 		}
 
 		EVENT_CLASS_TYPE(WindowResize)
+		EVENT_CLASS_CATEGORY(EventCategoryApplication)
+	private:
+		unsigned int m_width, m_height;
+	};
 
-			EVENT_CLASS_CATEGORY(EventCategoryApplication)
+	class FramebufferResizeEvent : public Event
+	{
+	public:
+		FramebufferResizeEvent(unsigned int width, unsigned int height) : m_width(width), m_height(height) {}
+
+		inline unsigned int GetWidth() const { return m_width; }
+		inline unsigned int GetHeight() const { return m_height; }
+
+		std::string ToString() const override
+		{
+			std::stringstream ss;
+			ss << "FramebufferResizeEvent: " << m_width << ", " << m_height;
+			return ss.str();
+		}
+
+		EVENT_CLASS_TYPE(FramebufferResize)
+		EVENT_CLASS_CATEGORY(EventCategoryApplication)
 	private:
 		unsigned int m_width, m_height;
 	};
@@ -32,7 +52,7 @@ namespace mz {
 		WindowCloseEvent() {}
 
 		EVENT_CLASS_TYPE(WindowClose)
-			EVENT_CLASS_CATEGORY(EventCategoryApplication)
+		EVENT_CLASS_CATEGORY(EventCategoryApplication)
 	};
 
 	class AppTickEvent : public Event
@@ -41,7 +61,7 @@ namespace mz {
 		AppTickEvent() {}
 
 		EVENT_CLASS_TYPE(AppTick)
-			EVENT_CLASS_CATEGORY(EventCategoryApplication)
+		EVENT_CLASS_CATEGORY(EventCategoryApplication)
 	};
 
 	class AppUpdateEvent : public Event
@@ -50,7 +70,7 @@ namespace mz {
 		AppUpdateEvent() {}
 
 		EVENT_CLASS_TYPE(AppUpdate)
-			EVENT_CLASS_CATEGORY(EventCategoryApplication)
+		EVENT_CLASS_CATEGORY(EventCategoryApplication)
 	};
 
 	class AppRenderEvent : public Event
@@ -59,6 +79,6 @@ namespace mz {
 		AppRenderEvent() {}
 
 		EVENT_CLASS_TYPE(AppRender)
-			EVENT_CLASS_CATEGORY(EventCategoryApplication)
+		EVENT_CLASS_CATEGORY(EventCategoryApplication)
 	};
 }

@@ -46,7 +46,6 @@ namespace mz {
 		}
 
 		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-		glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 		m_window = glfwCreateWindow((int)props.width, (int)props.height, m_data.title.c_str(), nullptr, nullptr);
 		//glfwMakeContextCurrent(m_window);
 		glfwSetWindowUserPointer(m_window, &m_data);
@@ -60,6 +59,16 @@ namespace mz {
 			data.height = height;
 
 			WindowResizeEvent event(width, height);
+			data.EventCallback(event);
+		});
+
+
+		glfwSetFramebufferSizeCallback(m_window, [](GLFWwindow* window, int width, int height) {
+			WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
+			data.framebufferWidth = width;
+			data.framebufferHeight = height;
+
+			FramebufferResizeEvent event(width, height);
 			data.EventCallback(event);
 		});
 

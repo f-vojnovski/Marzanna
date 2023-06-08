@@ -25,6 +25,8 @@ namespace mz {
 
 		virtual unsigned int GetWidth() const = 0;
 		virtual unsigned int GetHeight() const = 0;
+		virtual unsigned int GetFramebufferWidth() const = 0;
+		virtual unsigned int GetFramebufferHeight() const = 0;
 
 		// Window attributes
 		virtual void SetEventCallback(const EventCallbackFn& callback) = 0;

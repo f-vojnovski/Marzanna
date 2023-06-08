@@ -6,7 +6,7 @@
 namespace mz {
 	enum class EventType {
 		None = 0,
-		WindowClose, WindowResize, WindowFocuse, WindowLostFocus, WindowMoved,
+		WindowClose, WindowResize, FramebufferResize, WindowFocused, WindowLostFocus, WindowMoved,
 		AppTick, AppUpdate, AppRender,
 		KeyPressed, KeyReleased,
 		MouseButtonPressed, MouseButtonReleased, MouseMoved, MouseScrolled

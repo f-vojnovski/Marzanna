@@ -15,6 +15,9 @@ namespace mz {
 		inline unsigned int GetWidth() const override { return m_data.width; }
 		inline unsigned int GetHeight() const override { return m_data.height; }
 
+		inline unsigned int GetFramebufferWidth() const override { return m_data.framebufferWidth; }
+		inline unsigned int GetFramebufferHeight() const override { return m_data.framebufferHeight; }
+
 		// Window attributes
 		inline void SetEventCallback(const EventCallbackFn& callback) override { m_data.EventCallback = callback; }
 		void SetVSync(bool enabled) override;
@@ -31,6 +34,7 @@ namespace mz {
 		{
 			std::string title;
 			unsigned int width, height;
+			unsigned int framebufferWidth, framebufferHeight;
 			bool vSync;
 
 			EventCallbackFn EventCallback;
