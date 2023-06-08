@@ -17,6 +17,7 @@ namespace mz {
 		virtual void Shutdown() = 0;
 		virtual bool BeginFrame() = 0;
 		virtual bool EndFrame() = 0;
+		virtual void OnResize() = 0;
 		inline virtual ~RendererBackend() {}
 	};
 }

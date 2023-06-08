@@ -11,8 +11,8 @@ namespace mz {
 		static QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surface);
 		static bool IsDeviceSuitable(VkPhysicalDevice device, QueueFamilyIndices indices, SwapChainSupportDetails swapChainDetails);
 		static bool CheckDeviceExtensionSupport(VkPhysicalDevice device);
-		static SwapChainSupportDetails QuerySwapChainSupport(VkPhysicalDevice device, VkSurfaceKHR surface);
 	public:
+		static SwapChainSupportDetails QuerySwapChainSupport(VkPhysicalDevice device, VkSurfaceKHR surface);
 		static const std::vector<const char*> s_requiredDeviceExtensions;
 
 		VulkanDevice(std::shared_ptr<VulkanContext> contextPtr);

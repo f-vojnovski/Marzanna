@@ -132,7 +132,7 @@ namespace mz {
 		}
 
 		// Framebuffers
-		m_mainRenderPass->CreateFramebuffers();
+		m_swapChain->CreateFramebuffers();
 
 		// Command pool
 		if (!m_device->CreateGraphicsCommandPool()) {
@@ -160,7 +160,7 @@ namespace mz {
 
 		m_device->DestroyGraphicsCommandPool();
 
-		m_mainRenderPass->DestroyFramebuffers();
+		m_swapChain->DestroyFramebuffers();
 
 		m_pipeline->Destroy();
 
@@ -192,9 +192,20 @@ namespace mz {
 		VkCommandBuffer commandBuffer = contextPtr->commandBuffers[contextPtr->currentFrame];
 
 		vkWaitForFences(contextPtr->device.logicalDevice, 1, &inFlightFence, VK_TRUE, UINT64_MAX);
+
+		VkResult result = m_swapChain->AcquireNextImageIndex();
+
+		if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+			m_swapChain->Recreate();
+			return false;
+		}
+		else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
+			MZ_CORE_ERROR("Failed to acquire swap chain image!");
+			return false;
+		}
+
 		vkResetFences(contextPtr->device.logicalDevice, 1, &inFlightFence);
 
-		m_swapChain->AcquireNextImageIndex();
 		uint32_t imageIndex = contextPtr->swapChain.nextImageIndex;
 
 		vkResetCommandBuffer(commandBuffer, 0);
@@ -237,15 +248,29 @@ namespace mz {
 		presentInfo.pSwapchains = swapChains;
 		presentInfo.pImageIndices = &imageIndex;
 
-		vkQueuePresentKHR(contextPtr->device.presentQueue, &presentInfo);
+		result = vkQueuePresentKHR(contextPtr->device.presentQueue, &presentInfo);
+
+		if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || contextPtr->framebufferResized) {
+			contextPtr->framebufferResized = false;
+			m_swapChain->Recreate();
+		}
+		else if (result != VK_SUCCESS) {
+			MZ_CORE_ERROR("Failed to present swap chain image!");
+		}
 
 		contextPtr->currentFrame = (contextPtr->currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+
 		return true;
 	}
 	
 	bool VulkanRendererBackend::EndFrame()
 	{
 		return false;
+	}
+
+	void VulkanRendererBackend::OnResize()
+	{
+		contextPtr->framebufferResized = true;;
 	}
 
 	VKAPI_ATTR VkBool32 VKAPI_CALL VulkanRendererBackend::VulkanDebugCallback(
@@ -283,7 +308,7 @@ namespace mz {
 		VkRenderPassBeginInfo renderPassInfo{};
 		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 		renderPassInfo.renderPass = contextPtr->mainRenderPass.handle;
-		renderPassInfo.framebuffer = contextPtr->mainRenderPass.framebuffers[imageIndex];
+		renderPassInfo.framebuffer = contextPtr->swapChain.framebuffers[imageIndex];
 		renderPassInfo.renderArea.offset = { 0, 0 };
 		renderPassInfo.renderArea.extent = contextPtr->swapChain.extent;
 

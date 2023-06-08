@@ -16,7 +16,7 @@ namespace mz {
 		virtual void Shutdown() override;
 		virtual bool BeginFrame() override;
 		virtual bool EndFrame() override;
-
+		virtual void OnResize() override;
 	private:
 		std::shared_ptr<VulkanContext> contextPtr;
 		VkDebugUtilsMessengerEXT m_debugMessegner;

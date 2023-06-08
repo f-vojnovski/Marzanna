@@ -14,7 +14,5 @@ namespace mz {
 		void Destroy();
 		void Begin(VkCommandBuffer commandBuffer, uint32_t imageIndex);
 		void End(VkCommandBuffer commandBuffer, uint32_t imageIndex);
-		bool CreateFramebuffers();
-		void DestroyFramebuffers();
 	};
 }

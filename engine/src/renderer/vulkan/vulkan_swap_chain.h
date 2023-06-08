@@ -18,6 +18,10 @@ namespace mz {
 		void CreateImageViews();
 		bool CreateSyncObjects();
 		void DestroySyncObjects();
-		bool AcquireNextImageIndex();
+		bool CreateFramebuffers();
+		void DestroyFramebuffers();
+		VkResult AcquireNextImageIndex();
+		void Cleanup();
+		bool Recreate();
 	};
 }

@@ -49,11 +49,14 @@ namespace mz {
 		std::vector<VkSemaphore> renderFinishedSemaphores;
 		std::vector<VkFence> inFlightFences;
 		uint32_t nextImageIndex;
+
+		std::vector<VkFramebuffer> framebuffers;
+
+		bool recreating = false;
 	};
 
 	struct VulkanRenderPassInfo {
 		VkRenderPass handle;
-		std::vector<VkFramebuffer> framebuffers;
 	};
 
 	struct VulkanPipelineInfo {
@@ -78,5 +81,6 @@ namespace mz {
 		std::vector<VkCommandBuffer> commandBuffers;
 
 		uint32_t currentFrame = 0;
+		bool framebufferResized = false;
 	};
 }

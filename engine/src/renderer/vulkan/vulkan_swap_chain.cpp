@@ -1,5 +1,6 @@
 #include "vulkan_swap_chain.h"
 #include "vulkan_utils.h"
+#include "vulkan_device.h"
 
 namespace mz {
 	VulkanSwapChain::VulkanSwapChain(std::shared_ptr<VulkanContext> contextPtr) {
@@ -9,6 +10,8 @@ namespace mz {
 	void VulkanSwapChain::Create()
 	{
 		MZ_CORE_TRACE("Creating swap chain...");
+
+		contextPtr->device.swapChainDetails = VulkanDevice::QuerySwapChainSupport(contextPtr->device.physicalDevice, contextPtr->surface);
 
 		ChooseSurfaceFormat();
 		ChoosePresentMode();
@@ -48,8 +51,6 @@ namespace mz {
 
 		createInfo.presentMode = contextPtr->swapChain.presentMode;
 		createInfo.clipped = VK_TRUE;
-
-		createInfo.oldSwapchain = VK_NULL_HANDLE;
 
 		if (vkCreateSwapchainKHR(contextPtr->device.logicalDevice, &createInfo, nullptr, &contextPtr->swapChain.handle) != VK_SUCCESS) {
 			MZ_CORE_ERROR("Failed to create swap chain!");
@@ -141,7 +142,40 @@ namespace mz {
 		}
 	}
 
-	bool VulkanSwapChain::AcquireNextImageIndex()
+	bool VulkanSwapChain::CreateFramebuffers()
+    {
+        contextPtr->swapChain.framebuffers.resize(contextPtr->swapChain.imageViews.size());
+
+        for (size_t i = 0; i < contextPtr->swapChain.imageViews.size(); i++) {
+            VkImageView attachments[] = {
+                contextPtr->swapChain.imageViews[i]
+            };
+
+            VkFramebufferCreateInfo framebufferInfo{};
+            framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+            framebufferInfo.renderPass = contextPtr->mainRenderPass.handle;
+            framebufferInfo.attachmentCount = 1;
+            framebufferInfo.pAttachments = attachments;
+            framebufferInfo.width = contextPtr->swapChain.extent.width;
+            framebufferInfo.height = contextPtr->swapChain.extent.height;
+            framebufferInfo.layers = 1;
+
+            if (vkCreateFramebuffer(contextPtr->device.logicalDevice, &framebufferInfo, contextPtr->allocator, &contextPtr->swapChain.framebuffers[i]) != VK_SUCCESS) {
+                MZ_CORE_ERROR("Failed to create framebuffer!");
+                return false;
+            }
+        }
+    }
+
+    void VulkanSwapChain::DestroyFramebuffers()
+    {
+        MZ_CORE_TRACE("Destroying framebuffers...");
+        for (auto framebuffer : contextPtr->swapChain.framebuffers) {
+            vkDestroyFramebuffer(contextPtr->device.logicalDevice, framebuffer, contextPtr->allocator);
+        }
+    }
+
+	VkResult VulkanSwapChain::AcquireNextImageIndex()
 	{
 		VkResult result = vkAcquireNextImageKHR(
 			contextPtr->device.logicalDevice,
@@ -151,9 +185,27 @@ namespace mz {
 			VK_NULL_HANDLE,
 			&contextPtr->swapChain.nextImageIndex);
 
-		if (result != VK_SUCCESS) {
-			return false;
+		return result;
+	}
+
+	void VulkanSwapChain::Cleanup()
+	{
+		DestroyFramebuffers();
+
+		for (size_t i = 0; i < contextPtr->swapChain.imageViews.size(); i++) {
+			vkDestroyImageView(contextPtr->device.logicalDevice, contextPtr->swapChain.imageViews[i], contextPtr->allocator);
 		}
+
+		vkDestroySwapchainKHR(contextPtr->device.logicalDevice, contextPtr->swapChain.handle, contextPtr->allocator);
+	}
+
+	bool VulkanSwapChain::Recreate()
+	{
+		contextPtr->swapChain.recreating = false;
+		vkDeviceWaitIdle(contextPtr->device.logicalDevice);
+		Cleanup();
+		Create();
+		return CreateFramebuffers();
 	}
 
 	void VulkanSwapChain::ChooseSurfaceFormat()
@@ -185,8 +237,8 @@ namespace mz {
 			contextPtr->swapChain.extent = contextPtr->device.swapChainDetails.capabilities.currentExtent;
 		}
 		else {
-			unsigned int height = Application::Get().GetWindow().GetHeight();
-			unsigned int width = Application::Get().GetWindow().GetWidth();
+			unsigned int width = Application::Get().GetWindow().GetFramebufferWidth();
+			unsigned int height = Application::Get().GetWindow().GetFramebufferHeight();
 
 			contextPtr->swapChain.extent = {
 				static_cast<uint32_t>(width),
