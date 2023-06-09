@@ -25,6 +25,7 @@ set(CMAKE_CXX_STANDARD 17)
 find_package(Vulkan REQUIRED)
 
 add_subdirectory(engine/vendor/glfw)
+add_subdirectory(engine/vendor/glm)
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     if(MSVC)
@@ -49,7 +50,7 @@ target_sources(demo PRIVATE "demo.cpp")
 target_include_directories(demo PRIVATE 
     engine/vendor/spdlog/include 
     engine/vendor/glfw/include
-    engine/vendor/glm/glm
+    glm::glm
     "${PROJECT_SOURCE_DIR}"
     ${Vulkan_INCLUDE_DIRS}
 )
