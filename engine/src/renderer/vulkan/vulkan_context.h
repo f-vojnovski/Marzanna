@@ -1,6 +1,7 @@
 #pragma once
 
 #include "engine/src/mzpch.h"
+#include "engine/src/renderer/render_types.h"
 
 namespace mz {
 #define MAX_FRAMES_IN_FLIGHT 2
@@ -79,6 +80,9 @@ namespace mz {
 		VulkanPipelineInfo graphicsRenderingPipeline;
 
 		std::vector<VkCommandBuffer> commandBuffers;
+		
+		VkBuffer vertexBuffer;
+		VkDeviceMemory vertexBufferMemory;
 
 		uint32_t currentFrame = 0;
 		bool framebufferResized = false;

@@ -2,6 +2,12 @@
 #include "vulkan_utils.h"
 
 namespace mz {
+	const std::vector<Vertex2d> vertices = {
+		{{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+		{{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
+		{{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}
+	};
+
 	VulkanRendererBackend::VulkanRendererBackend(const RendererBackendArgs args) 
 	{
 		contextPtr = std::make_shared<VulkanContext>();
@@ -140,8 +146,17 @@ namespace mz {
 			return false;
 		}
 
-		// Command buffer {IMPL LATER}
-		CreateCommandBuffers();
+		// Command buffer
+		if (!CreateCommandBuffers()) {
+			MZ_CORE_CRITICAL("Failed to create command buffers!");
+			return false;
+		}
+
+		// Vertex buffer
+		if (!CreateVertexBuffer()) {
+			MZ_CORE_CRITICAL("Failed to create vertex buffer!");
+			return false;
+		}
 
 		// Sync objects
 		if (!m_swapChain->CreateSyncObjects()) {
@@ -155,6 +170,9 @@ namespace mz {
 	void VulkanRendererBackend::Shutdown()
 	{
 		vkDeviceWaitIdle(contextPtr->device.logicalDevice);
+
+		vkDestroyBuffer(contextPtr->device.logicalDevice, contextPtr->vertexBuffer, contextPtr->allocator);
+		vkFreeMemory(contextPtr->device.logicalDevice, contextPtr->vertexBufferMemory, contextPtr->allocator);
 
 		m_swapChain->DestroySyncObjects();
 
@@ -302,7 +320,7 @@ namespace mz {
 		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 
 		if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS) {
-			throw std::runtime_error("failed to begin recording command buffer!");
+			MZ_CORE_ERROR("Failed to begin recording command buffer!");
 		}
 
 		VkRenderPassBeginInfo renderPassInfo{};
@@ -320,6 +338,10 @@ namespace mz {
 
 		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, contextPtr->graphicsRenderingPipeline.handle);
 
+		VkBuffer vertexBuffers[] = { contextPtr->vertexBuffer };
+		VkDeviceSize offsets[] = { 0 };
+		vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+
 		VkViewport viewport{};
 		viewport.x = 0.0f;
 		viewport.y = 0.0f;
@@ -334,7 +356,7 @@ namespace mz {
 		scissor.extent = contextPtr->swapChain.extent;
 		vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-		vkCmdDraw(commandBuffer, 3, 1, 0, 0);
+		vkCmdDraw(commandBuffer, static_cast<uint32_t>(vertices.size()), 1, 0, 0);
 
 		vkCmdEndRenderPass(commandBuffer);
 
@@ -351,8 +373,42 @@ namespace mz {
 		allocInfo.commandBufferCount = MAX_FRAMES_IN_FLIGHT;
 
 		if (vkAllocateCommandBuffers(contextPtr->device.logicalDevice, &allocInfo, contextPtr->commandBuffers.data()) != VK_SUCCESS) {
-			MZ_CORE_CRITICAL("Failed to allocate command buffer!");
 			return false;
 		}
+
+		return true;
+	}
+	bool VulkanRendererBackend::CreateVertexBuffer()
+	{
+		VkBufferCreateInfo bufferInfo{};
+		bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+		bufferInfo.size = sizeof(vertices[0]) * vertices.size();
+		bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+		bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+		if (vkCreateBuffer(contextPtr->device.logicalDevice, &bufferInfo, contextPtr->allocator, &contextPtr->vertexBuffer) != VK_SUCCESS) {
+			return false;
+		}
+
+		VkMemoryRequirements memRequirements;
+		vkGetBufferMemoryRequirements(contextPtr->device.logicalDevice, contextPtr->vertexBuffer, &memRequirements);
+
+		VkMemoryAllocateInfo allocInfo{};
+		allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+		allocInfo.allocationSize = memRequirements.size;
+		allocInfo.memoryTypeIndex = m_device->FindMemoryType(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+
+		if (vkAllocateMemory(contextPtr->device.logicalDevice, &allocInfo, contextPtr->allocator, &contextPtr->vertexBufferMemory) != VK_SUCCESS) {
+			throw std::runtime_error("failed to allocate vertex buffer memory!");
+		}
+
+		vkBindBufferMemory(contextPtr->device.logicalDevice, contextPtr->vertexBuffer, contextPtr->vertexBufferMemory, 0);
+
+		void* data;
+		vkMapMemory(contextPtr->device.logicalDevice, contextPtr->vertexBufferMemory, 0, bufferInfo.size, 0, &data);
+		memcpy(data, vertices.data(), (size_t)bufferInfo.size);
+		vkUnmapMemory(contextPtr->device.logicalDevice, contextPtr->vertexBufferMemory);
+
+		return true;
 	}
 }

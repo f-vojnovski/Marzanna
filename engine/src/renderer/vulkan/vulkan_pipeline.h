@@ -16,5 +16,8 @@ namespace mz {
 		bool Create(VkRenderPass renderPass);
 		void Destroy();
 		void Bind(VkCommandBuffer commandBuffer);
+		
+		static VkVertexInputBindingDescription Vertex2dGetBindingDescription();
+		static std::array<VkVertexInputAttributeDescription, 2> Vertex2dGetAttributeDescriptions();
 	};
 }

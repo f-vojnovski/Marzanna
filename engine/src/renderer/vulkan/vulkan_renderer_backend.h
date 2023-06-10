@@ -32,6 +32,7 @@ namespace mz {
 			void* user_data);
 
 		bool CreateCommandBuffers();
+		bool CreateVertexBuffer();
 		void RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
 	};
 }
