@@ -363,6 +363,40 @@ namespace mz {
 		VK_CHECK(vkEndCommandBuffer(commandBuffer));
 	}
 
+	void VulkanRendererBackend::CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
+	{
+		VkCommandBufferAllocateInfo allocInfo{};
+		allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+		allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+		allocInfo.commandPool = contextPtr->device.graphicsCommandPool;
+		allocInfo.commandBufferCount = 1;
+
+		VkCommandBuffer commandBuffer;
+		vkAllocateCommandBuffers(contextPtr->device.logicalDevice, &allocInfo, &commandBuffer);
+
+		VkCommandBufferBeginInfo beginInfo{};
+		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+		beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+		vkBeginCommandBuffer(commandBuffer, &beginInfo);
+
+		VkBufferCopy copyRegion{};
+		copyRegion.size = size;
+		vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
+
+		vkEndCommandBuffer(commandBuffer);
+
+		VkSubmitInfo submitInfo{};
+		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+		submitInfo.commandBufferCount = 1;
+		submitInfo.pCommandBuffers = &commandBuffer;
+
+		vkQueueSubmit(contextPtr->device.graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
+		vkQueueWaitIdle(contextPtr->device.graphicsQueue);
+
+		vkFreeCommandBuffers(contextPtr->device.logicalDevice, contextPtr->device.graphicsCommandPool, 1, &commandBuffer);
+	}
+
 	bool VulkanRendererBackend::CreateCommandBuffers() {
 		contextPtr->commandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
 
@@ -381,16 +415,39 @@ namespace mz {
 	bool VulkanRendererBackend::CreateVertexBuffer()
 	{
 		VkDeviceSize bufferSize = sizeof(Vertex2d) * vertices.size();
-		CreateBuffer(
+
+		VkBuffer stagingBuffer;
+		VkDeviceMemory stagingBufferMemory;
+		if (!CreateBuffer(
 			bufferSize, 
-			VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 
-			contextPtr->vertexBuffer, 
-			contextPtr->vertexBufferMemory);
+			VK_BUFFER_USAGE_TRANSFER_SRC_BIT, 
+			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+			stagingBuffer, 
+			stagingBufferMemory)) {
+			MZ_CORE_CRITICAL("Failed to create staging buffer!");
+			return false;
+		}
+
 
 		void* data;
-		vkMapMemory(contextPtr->device.logicalDevice, contextPtr->vertexBufferMemory, 0, bufferSize, 0, &data);
+		vkMapMemory(contextPtr->device.logicalDevice, stagingBufferMemory, 0, bufferSize, 0, &data);
 		memcpy(data, vertices.data(), (size_t)bufferSize);
-		vkUnmapMemory(contextPtr->device.logicalDevice, contextPtr->vertexBufferMemory);
+		vkUnmapMemory(contextPtr->device.logicalDevice, stagingBufferMemory);
+
+		if (!CreateBuffer(
+			bufferSize,
+			VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, 
+			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+			contextPtr->vertexBuffer,
+			contextPtr->vertexBufferMemory)) {
+			MZ_CORE_CRITICAL("Failed to create vertex buffer!");
+			return false;
+		}
+
+		CopyBuffer(stagingBuffer, contextPtr->vertexBuffer, bufferSize);
+
+		vkDestroyBuffer(contextPtr->device.logicalDevice, stagingBuffer, contextPtr->allocator);
+		vkFreeMemory(contextPtr->device.logicalDevice, stagingBufferMemory, contextPtr->allocator);
 
 		return true;
 	}
@@ -421,5 +478,7 @@ namespace mz {
 		}
 
 		vkBindBufferMemory(contextPtr->device.logicalDevice, buffer, bufferMemory, 0);
+
+		return true;
 	}
 }
