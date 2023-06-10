@@ -84,6 +84,9 @@ namespace mz {
 		VkBuffer vertexBuffer;
 		VkDeviceMemory vertexBufferMemory;
 
+		VkBuffer indexBuffer;
+		VkDeviceMemory indexBufferMemory;
+
 		uint32_t currentFrame = 0;
 		bool framebufferResized = false;
 	};

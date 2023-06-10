@@ -3,12 +3,17 @@
 
 namespace mz {
 	const std::vector<Vertex2d> vertices = {
-		{{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-		{{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
-		{{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}
+		{{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+		{{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
+		{{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
+		{{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}
 	};
 
-	VulkanRendererBackend::VulkanRendererBackend(const RendererBackendArgs args) 
+	const std::vector<uint32_t> indices = {
+		0, 1, 2, 2, 3, 0
+	};
+
+	VulkanRendererBackend::VulkanRendererBackend(const RendererBackendArgs args)
 	{
 		contextPtr = std::make_shared<VulkanContext>();
 		m_name = args.name;
@@ -108,7 +113,7 @@ namespace mz {
 
 		// Device creation
 		m_device = std::make_unique<VulkanDevice>(contextPtr);
-		
+
 		if (!m_device->SelectPhysicalDevice()) {
 			MZ_CORE_CRITICAL("Failed to select physical device!");
 			return false;
@@ -158,6 +163,12 @@ namespace mz {
 			return false;
 		}
 
+		// Index buffer
+		if (!CreateIndexBuffer()) {
+			MZ_CORE_CRITICAL("Failed to create index buffer!");
+			return false;
+		}
+
 		// Sync objects
 		if (!m_swapChain->CreateSyncObjects()) {
 			MZ_CORE_CRITICAL("Failed to create swap chain sync objects!");
@@ -166,10 +177,13 @@ namespace mz {
 
 		return true;
 	}
-	
+
 	void VulkanRendererBackend::Shutdown()
 	{
 		vkDeviceWaitIdle(contextPtr->device.logicalDevice);
+
+		vkDestroyBuffer(contextPtr->device.logicalDevice, contextPtr->indexBuffer, contextPtr->allocator);
+		vkFreeMemory(contextPtr->device.logicalDevice, contextPtr->indexBufferMemory, contextPtr->allocator);
 
 		vkDestroyBuffer(contextPtr->device.logicalDevice, contextPtr->vertexBuffer, contextPtr->allocator);
 		vkFreeMemory(contextPtr->device.logicalDevice, contextPtr->vertexBufferMemory, contextPtr->allocator);
@@ -201,7 +215,7 @@ namespace mz {
 		MZ_CORE_TRACE("Destroying Vulkan instance...");
 		vkDestroyInstance(contextPtr->instance, contextPtr->allocator);
 	}
-	
+
 	bool VulkanRendererBackend::BeginFrame()
 	{
 		VkSemaphore imageAvailableSemaphore = contextPtr->swapChain.imageAvailableSemaphores[contextPtr->currentFrame];
@@ -280,7 +294,7 @@ namespace mz {
 
 		return true;
 	}
-	
+
 	bool VulkanRendererBackend::EndFrame()
 	{
 		return false;
@@ -313,7 +327,7 @@ namespace mz {
 		}
 		return VK_FALSE;
 	}
-	
+
 	void VulkanRendererBackend::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex)
 	{
 		VkCommandBufferBeginInfo beginInfo{};
@@ -342,6 +356,8 @@ namespace mz {
 		VkDeviceSize offsets[] = { 0 };
 		vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
 
+		vkCmdBindIndexBuffer(commandBuffer, contextPtr->indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+
 		VkViewport viewport{};
 		viewport.x = 0.0f;
 		viewport.y = 0.0f;
@@ -356,7 +372,7 @@ namespace mz {
 		scissor.extent = contextPtr->swapChain.extent;
 		vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-		vkCmdDraw(commandBuffer, static_cast<uint32_t>(vertices.size()), 1, 0, 0);
+		vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
 
 		vkCmdEndRenderPass(commandBuffer);
 
@@ -419,10 +435,10 @@ namespace mz {
 		VkBuffer stagingBuffer;
 		VkDeviceMemory stagingBufferMemory;
 		if (!CreateBuffer(
-			bufferSize, 
-			VK_BUFFER_USAGE_TRANSFER_SRC_BIT, 
+			bufferSize,
+			VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
 			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-			stagingBuffer, 
+			stagingBuffer,
 			stagingBufferMemory)) {
 			MZ_CORE_CRITICAL("Failed to create staging buffer!");
 			return false;
@@ -436,7 +452,7 @@ namespace mz {
 
 		if (!CreateBuffer(
 			bufferSize,
-			VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, 
+			VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
 			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 			contextPtr->vertexBuffer,
 			contextPtr->vertexBufferMemory)) {
@@ -445,6 +461,37 @@ namespace mz {
 		}
 
 		CopyBuffer(stagingBuffer, contextPtr->vertexBuffer, bufferSize);
+
+		vkDestroyBuffer(contextPtr->device.logicalDevice, stagingBuffer, contextPtr->allocator);
+		vkFreeMemory(contextPtr->device.logicalDevice, stagingBufferMemory, contextPtr->allocator);
+
+		return true;
+	}
+
+	bool VulkanRendererBackend::CreateIndexBuffer()
+	{
+		VkDeviceSize bufferSize = sizeof(indices[0]) * indices.size();
+
+		VkBuffer stagingBuffer;
+		VkDeviceMemory stagingBufferMemory;
+		CreateBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
+
+		void* data;
+		vkMapMemory(contextPtr->device.logicalDevice, stagingBufferMemory, 0, bufferSize, 0, &data);
+		memcpy(data, indices.data(), (size_t)bufferSize);
+		vkUnmapMemory(contextPtr->device.logicalDevice, stagingBufferMemory);
+
+		if (!CreateBuffer(
+			bufferSize,
+			VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+			contextPtr->indexBuffer,
+			contextPtr->indexBufferMemory)) {
+			MZ_CORE_CRITICAL("Failed to create index buffer!");
+			return false;
+		}
+
+		CopyBuffer(stagingBuffer, contextPtr->indexBuffer, bufferSize);
 
 		vkDestroyBuffer(contextPtr->device.logicalDevice, stagingBuffer, contextPtr->allocator);
 		vkFreeMemory(contextPtr->device.logicalDevice, stagingBufferMemory, contextPtr->allocator);
