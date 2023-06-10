@@ -380,35 +380,46 @@ namespace mz {
 	}
 	bool VulkanRendererBackend::CreateVertexBuffer()
 	{
+		VkDeviceSize bufferSize = sizeof(Vertex2d) * vertices.size();
+		CreateBuffer(
+			bufferSize, 
+			VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 
+			contextPtr->vertexBuffer, 
+			contextPtr->vertexBufferMemory);
+
+		void* data;
+		vkMapMemory(contextPtr->device.logicalDevice, contextPtr->vertexBufferMemory, 0, bufferSize, 0, &data);
+		memcpy(data, vertices.data(), (size_t)bufferSize);
+		vkUnmapMemory(contextPtr->device.logicalDevice, contextPtr->vertexBufferMemory);
+
+		return true;
+	}
+
+	bool VulkanRendererBackend::CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory) {
 		VkBufferCreateInfo bufferInfo{};
 		bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-		bufferInfo.size = sizeof(vertices[0]) * vertices.size();
-		bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+		bufferInfo.size = size;
+		bufferInfo.usage = usage;
 		bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-		if (vkCreateBuffer(contextPtr->device.logicalDevice, &bufferInfo, contextPtr->allocator, &contextPtr->vertexBuffer) != VK_SUCCESS) {
+		if (vkCreateBuffer(contextPtr->device.logicalDevice, &bufferInfo, contextPtr->allocator, &buffer) != VK_SUCCESS) {
+			MZ_CORE_ERROR("Failed to create buffer!");
 			return false;
 		}
 
 		VkMemoryRequirements memRequirements;
-		vkGetBufferMemoryRequirements(contextPtr->device.logicalDevice, contextPtr->vertexBuffer, &memRequirements);
+		vkGetBufferMemoryRequirements(contextPtr->device.logicalDevice, buffer, &memRequirements);
 
 		VkMemoryAllocateInfo allocInfo{};
 		allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 		allocInfo.allocationSize = memRequirements.size;
-		allocInfo.memoryTypeIndex = m_device->FindMemoryType(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+		allocInfo.memoryTypeIndex = m_device->FindMemoryType(memRequirements.memoryTypeBits, properties);
 
-		if (vkAllocateMemory(contextPtr->device.logicalDevice, &allocInfo, contextPtr->allocator, &contextPtr->vertexBufferMemory) != VK_SUCCESS) {
-			throw std::runtime_error("failed to allocate vertex buffer memory!");
+		if (vkAllocateMemory(contextPtr->device.logicalDevice, &allocInfo, contextPtr->allocator, &bufferMemory) != VK_SUCCESS) {
+			MZ_CORE_ERROR("Failed to allocate memory for buffer!");
+			return false;
 		}
 
-		vkBindBufferMemory(contextPtr->device.logicalDevice, contextPtr->vertexBuffer, contextPtr->vertexBufferMemory, 0);
-
-		void* data;
-		vkMapMemory(contextPtr->device.logicalDevice, contextPtr->vertexBufferMemory, 0, bufferInfo.size, 0, &data);
-		memcpy(data, vertices.data(), (size_t)bufferInfo.size);
-		vkUnmapMemory(contextPtr->device.logicalDevice, contextPtr->vertexBufferMemory);
-
-		return true;
+		vkBindBufferMemory(contextPtr->device.logicalDevice, buffer, bufferMemory, 0);
 	}
 }
