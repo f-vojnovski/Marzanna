@@ -6,7 +6,6 @@
 namespace mz {
 #define MAX_FRAMES_IN_FLIGHT 2
 
-	// Device
 	struct QueueFamilyIndices {
 		std::optional<uint32_t> graphicsFamily;
 		std::optional<uint32_t> presentFamily;
@@ -63,6 +62,15 @@ namespace mz {
 	struct VulkanPipelineInfo {
 		VkPipelineLayout layout;
 		VkPipeline handle;
+		VkDescriptorSetLayout descriptorSetLayout;
+		VkDescriptorPool descriptorPool;
+		std::vector<VkDescriptorSet> descriptorSets;
+	};
+
+	struct UniformBuffer {
+		VkBuffer handle;
+		VkDeviceMemory memory;
+		void* mapped;
 	};
 
 	struct VulkanContext {
@@ -89,5 +97,7 @@ namespace mz {
 
 		uint32_t currentFrame = 0;
 		bool framebufferResized = false;
+
+		std::vector<UniformBuffer> uniformBuffers;
 	};
 }

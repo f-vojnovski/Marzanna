@@ -34,8 +34,13 @@ namespace mz {
 		bool CreateCommandBuffers();
 		bool CreateVertexBuffer();
 		bool CreateIndexBuffer();
+		bool CreateUniformBuffer();
 		bool CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
 		void RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
 		void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
+		bool CreateDescriptorSetLayout();
+		bool CreateDescriptorPool();
+		bool CreateDescriptorSets();
+		void UpdateUniformObject(uint32_t currentImage);
 	};
 }

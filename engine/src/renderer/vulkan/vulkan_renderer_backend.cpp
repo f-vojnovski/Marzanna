@@ -135,6 +135,12 @@ namespace mz {
 			return false;
 		}
 
+		// Descriptor set layout
+		if (!CreateDescriptorSetLayout()) {
+			MZ_CORE_CRITICAL("Failed to create descriptor set layout!");
+			return false;
+		}
+
 		// Pipeline creation
 		m_pipeline = std::make_unique<VulkanPipeline>(contextPtr);
 		if (!m_pipeline->Create(contextPtr->mainRenderPass.handle)) {
@@ -151,12 +157,6 @@ namespace mz {
 			return false;
 		}
 
-		// Command buffer
-		if (!CreateCommandBuffers()) {
-			MZ_CORE_CRITICAL("Failed to create command buffers!");
-			return false;
-		}
-
 		// Vertex buffer
 		if (!CreateVertexBuffer()) {
 			MZ_CORE_CRITICAL("Failed to create vertex buffer!");
@@ -166,6 +166,30 @@ namespace mz {
 		// Index buffer
 		if (!CreateIndexBuffer()) {
 			MZ_CORE_CRITICAL("Failed to create index buffer!");
+			return false;
+		}
+
+		// Uniform buffer
+		if (!CreateUniformBuffer()) {
+			MZ_CORE_CRITICAL("Failed to create uniform buffer!");
+			return false;
+		}
+
+		// Descriptor pool
+		if (!CreateDescriptorPool()) {
+			MZ_CORE_CRITICAL("Failed to create descriptor pool!");
+			return false;
+		}
+
+		// Command buffer
+		if (!CreateCommandBuffers()) {
+			MZ_CORE_CRITICAL("Failed to create command buffers!");
+			return false;
+		}
+
+		// Descriptor sets
+		if (!CreateDescriptorSets()) {
+			MZ_CORE_CRITICAL("Failed to create descriptor sets!");
 			return false;
 		}
 
@@ -181,30 +205,52 @@ namespace mz {
 	void VulkanRendererBackend::Shutdown()
 	{
 		vkDeviceWaitIdle(contextPtr->device.logicalDevice);
+	
+		// Sync objects
+		m_swapChain->DestroySyncObjects();
 
+		// Uniform buffers
+		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+			vkDestroyBuffer(contextPtr->device.logicalDevice, contextPtr->uniformBuffers[i].handle, contextPtr->allocator);
+			vkFreeMemory(contextPtr->device.logicalDevice, contextPtr->uniformBuffers[i].memory, contextPtr->allocator);
+		}
+
+		// Index buffer
 		vkDestroyBuffer(contextPtr->device.logicalDevice, contextPtr->indexBuffer, contextPtr->allocator);
 		vkFreeMemory(contextPtr->device.logicalDevice, contextPtr->indexBufferMemory, contextPtr->allocator);
 
+		// Vertex buffer
 		vkDestroyBuffer(contextPtr->device.logicalDevice, contextPtr->vertexBuffer, contextPtr->allocator);
 		vkFreeMemory(contextPtr->device.logicalDevice, contextPtr->vertexBufferMemory, contextPtr->allocator);
 
-		m_swapChain->DestroySyncObjects();
-
+		// Command pool
 		m_device->DestroyGraphicsCommandPool();
-
+		
+		// Framebuffers
 		m_swapChain->DestroyFramebuffers();
-
+		
+		// Pipeline
 		m_pipeline->Destroy();
 
-		m_mainRenderPass->Destroy();
+		// Descriptor set layout
+		vkDestroyDescriptorSetLayout(contextPtr->device.logicalDevice, contextPtr->graphicsRenderingPipeline.descriptorSetLayout, contextPtr->allocator);
 
+		vkDestroyDescriptorPool(contextPtr->device.logicalDevice, contextPtr->graphicsRenderingPipeline.descriptorPool, contextPtr->allocator);
+		
+		// Main renderpass
+		m_mainRenderPass->Destroy();
+		
+		// Swap chain
 		m_swapChain->Destroy();
 
+		// Device
 		m_device->Shutdown();
 
+		// Surface
 		MZ_CORE_TRACE("Destroying surface...");
 		vkDestroySurfaceKHR(contextPtr->instance, contextPtr->surface, contextPtr->allocator);
 
+		// Debugger
 		MZ_CORE_TRACE("Destroying Vulkan debugger...");
 		if (m_debugMessegner) {
 			PFN_vkDestroyDebugUtilsMessengerEXT func =
@@ -212,6 +258,7 @@ namespace mz {
 			func(contextPtr->instance, m_debugMessegner, contextPtr->allocator);
 		}
 
+		// Instance
 		MZ_CORE_TRACE("Destroying Vulkan instance...");
 		vkDestroyInstance(contextPtr->instance, contextPtr->allocator);
 	}
@@ -235,6 +282,8 @@ namespace mz {
 			MZ_CORE_ERROR("Failed to acquire swap chain image!");
 			return false;
 		}
+
+		UpdateUniformObject(contextPtr->currentFrame);
 
 		vkResetFences(contextPtr->device.logicalDevice, 1, &inFlightFence);
 
@@ -358,6 +407,17 @@ namespace mz {
 
 		vkCmdBindIndexBuffer(commandBuffer, contextPtr->indexBuffer, 0, VK_INDEX_TYPE_UINT32);
 
+		vkCmdBindDescriptorSets(
+			commandBuffer, 
+			VK_PIPELINE_BIND_POINT_GRAPHICS, 
+			contextPtr->graphicsRenderingPipeline.layout, 
+			0, 
+			1, 
+			&contextPtr->graphicsRenderingPipeline.descriptorSets[contextPtr->currentFrame], 
+			0, 
+			nullptr);
+
+
 		VkViewport viewport{};
 		viewport.x = 0.0f;
 		viewport.y = 0.0f;
@@ -411,6 +471,98 @@ namespace mz {
 		vkQueueWaitIdle(contextPtr->device.graphicsQueue);
 
 		vkFreeCommandBuffers(contextPtr->device.logicalDevice, contextPtr->device.graphicsCommandPool, 1, &commandBuffer);
+	}
+
+	bool VulkanRendererBackend::CreateDescriptorSetLayout()
+	{
+		VkDescriptorSetLayoutBinding uboLayoutBinding{};
+		uboLayoutBinding.binding = 0;
+		uboLayoutBinding.descriptorCount = 1;
+		uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		uboLayoutBinding.pImmutableSamplers = nullptr;
+		uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+
+		VkDescriptorSetLayoutCreateInfo layoutInfo{};
+		layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+		layoutInfo.bindingCount = 1;
+		layoutInfo.pBindings = &uboLayoutBinding;
+
+		if (vkCreateDescriptorSetLayout(contextPtr->device.logicalDevice, &layoutInfo, contextPtr->allocator, &contextPtr->graphicsRenderingPipeline.descriptorSetLayout) != VK_SUCCESS) {
+			return false;
+		}
+
+		return true;
+	}
+
+	bool VulkanRendererBackend::CreateDescriptorPool()
+	{
+		VkDescriptorPoolSize poolSize{};
+		poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		poolSize.descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+
+		VkDescriptorPoolCreateInfo poolInfo{};
+		poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+		poolInfo.poolSizeCount = 1;
+		poolInfo.pPoolSizes = &poolSize;
+		poolInfo.maxSets = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+
+		if (vkCreateDescriptorPool(contextPtr->device.logicalDevice, &poolInfo, contextPtr->allocator, &contextPtr->graphicsRenderingPipeline.descriptorPool) != VK_SUCCESS) {
+			return false;
+		}
+
+		return true;
+	}
+
+	
+	bool VulkanRendererBackend::CreateDescriptorSets()
+	{
+		std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, contextPtr->graphicsRenderingPipeline.descriptorSetLayout);
+		VkDescriptorSetAllocateInfo allocInfo{};
+		allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+		allocInfo.descriptorPool = contextPtr->graphicsRenderingPipeline.descriptorPool;
+		allocInfo.descriptorSetCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+		allocInfo.pSetLayouts = layouts.data();
+
+		contextPtr->graphicsRenderingPipeline.descriptorSets.resize(MAX_FRAMES_IN_FLIGHT);
+		if (vkAllocateDescriptorSets(contextPtr->device.logicalDevice, &allocInfo, contextPtr->graphicsRenderingPipeline.descriptorSets.data()) != VK_SUCCESS) {
+			return false;
+		}
+
+		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+			VkDescriptorBufferInfo bufferInfo{};
+			bufferInfo.buffer = contextPtr->uniformBuffers[i].handle;
+			bufferInfo.offset = 0;
+			bufferInfo.range = sizeof(UniformBufferObject);
+
+			VkWriteDescriptorSet descriptorWrite{};
+			descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+			descriptorWrite.dstSet = contextPtr->graphicsRenderingPipeline.descriptorSets[i];
+			descriptorWrite.dstBinding = 0;
+			descriptorWrite.dstArrayElement = 0;
+			descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+			descriptorWrite.descriptorCount = 1;
+			descriptorWrite.pBufferInfo = &bufferInfo;
+
+			vkUpdateDescriptorSets(contextPtr->device.logicalDevice, 1, &descriptorWrite, 0, nullptr);
+		}
+
+		return true;
+	}
+
+	void VulkanRendererBackend::UpdateUniformObject(uint32_t currentImage)
+	{
+		static auto startTime = std::chrono::high_resolution_clock::now();
+
+		auto currentTime = std::chrono::high_resolution_clock::now();
+		float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+
+		UniformBufferObject ubo{};
+		ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+		ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+		ubo.proj = glm::perspective(glm::radians(45.0f), contextPtr->swapChain.extent.width / (float)contextPtr->swapChain.extent.height, 0.1f, 10.0f);
+		ubo.proj[1][1] *= -1;
+
+		memcpy(contextPtr->uniformBuffers[currentImage].mapped, &ubo, sizeof(ubo));
 	}
 
 	bool VulkanRendererBackend::CreateCommandBuffers() {
@@ -495,6 +647,28 @@ namespace mz {
 
 		vkDestroyBuffer(contextPtr->device.logicalDevice, stagingBuffer, contextPtr->allocator);
 		vkFreeMemory(contextPtr->device.logicalDevice, stagingBufferMemory, contextPtr->allocator);
+
+		return true;
+	}
+
+	bool VulkanRendererBackend::CreateUniformBuffer()
+	{
+		VkDeviceSize bufferSize = sizeof(UniformBufferObject);
+
+		contextPtr->uniformBuffers.resize(MAX_FRAMES_IN_FLIGHT);
+
+		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+			if (!CreateBuffer(
+				bufferSize,
+				VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+				VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+				contextPtr->uniformBuffers[i].handle, contextPtr->uniformBuffers[i].memory)) {
+				MZ_CORE_CRITICAL("Failed to create uniform buffers!");
+				return false;
+			}
+
+			vkMapMemory(contextPtr->device.logicalDevice, contextPtr->uniformBuffers[i].memory, 0, bufferSize, 0, &contextPtr->uniformBuffers[i].mapped);
+		}
 
 		return true;
 	}
