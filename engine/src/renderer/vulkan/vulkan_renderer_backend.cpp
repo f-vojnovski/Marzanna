@@ -283,6 +283,8 @@ namespace mz {
 			return false;
 		}
 
+		UpdateUniformObject(contextPtr->currentFrame);
+
 		vkResetFences(contextPtr->device.logicalDevice, 1, &inFlightFence);
 
 		uint32_t imageIndex = contextPtr->swapChain.nextImageIndex;
@@ -357,6 +359,10 @@ namespace mz {
 		UpdateUniformObject(contextPtr->currentFrame);
 	}
 
+	void VulkanRendererBackend::DrawGeometries(RendererGeometryData geometryData)
+	{
+	}
+
 	VKAPI_ATTR VkBool32 VKAPI_CALL VulkanRendererBackend::VulkanDebugCallback(
 		VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
 		VkDebugUtilsMessageTypeFlagsEXT message_types,
@@ -389,18 +395,7 @@ namespace mz {
 			MZ_CORE_ERROR("Failed to begin recording command buffer!");
 		}
 
-		VkRenderPassBeginInfo renderPassInfo{};
-		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-		renderPassInfo.renderPass = contextPtr->mainRenderPass.handle;
-		renderPassInfo.framebuffer = contextPtr->swapChain.framebuffers[imageIndex];
-		renderPassInfo.renderArea.offset = { 0, 0 };
-		renderPassInfo.renderArea.extent = contextPtr->swapChain.extent;
-
-		VkClearValue clearColor = { {{0.0f, 0.0f, 0.0f, 1.0f}} };
-		renderPassInfo.clearValueCount = 1;
-		renderPassInfo.pClearValues = &clearColor;
-
-		vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+		m_mainRenderPass->Begin(commandBuffer, imageIndex);
 
 		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, contextPtr->graphicsRenderingPipeline.handle);
 
@@ -437,7 +432,7 @@ namespace mz {
 
 		vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
 
-		vkCmdEndRenderPass(commandBuffer);
+		m_mainRenderPass->End(commandBuffer, imageIndex);
 
 		VK_CHECK(vkEndCommandBuffer(commandBuffer));
 	}

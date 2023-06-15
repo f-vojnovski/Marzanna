@@ -13,6 +13,10 @@ namespace mz {
 	
 	};
 
+	struct RendererGeometryData {
+
+	};
+
 	class RendererBackend {
 	protected:
 		std::string m_name;
@@ -23,6 +27,7 @@ namespace mz {
 		virtual bool EndFrame() = 0;
 		virtual void OnResize() = 0;
 		virtual void UpdateGlobalState(RendererGlobalState globalState) = 0;
+		virtual void DrawGeometries(RendererGeometryData geometryData) = 0;
 		inline virtual ~RendererBackend() {}
 	};
 }
