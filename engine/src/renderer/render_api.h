@@ -12,8 +12,6 @@ namespace mz {
 	class RenderAPI {
 	private:
 		std::unique_ptr<RendererBackend> m_rendererBackend;
-		bool BeginFrame();
-		bool EndFrame();
 	public:
 		RenderAPI(const RenderApiArgs args);
 		bool Initialize();

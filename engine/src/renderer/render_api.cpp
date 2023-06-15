@@ -11,14 +11,6 @@ namespace mz {
 		backendArgs.window = args.window;
 		m_rendererBackend = std::make_unique<VulkanRendererBackend>(backendArgs);
 	}
-	
-	bool RenderAPI::BeginFrame() {
-		return true;
-	}
-
-	bool RenderAPI::EndFrame() {
-		return true;
-	}
 
 	bool RenderAPI::Initialize() {
 		MZ_CORE_TRACE("Creating renderer backend...");
