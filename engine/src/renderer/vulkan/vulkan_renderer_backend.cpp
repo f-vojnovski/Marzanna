@@ -265,8 +265,6 @@ namespace mz {
 
 	bool VulkanRendererBackend::BeginFrame()
 	{
-		VkSemaphore imageAvailableSemaphore = contextPtr->swapChain.imageAvailableSemaphores[contextPtr->currentFrame];
-		VkSemaphore renderFinishedSemaphore = contextPtr->swapChain.renderFinishedSemaphores[contextPtr->currentFrame];
 		VkFence inFlightFence = contextPtr->swapChain.inFlightFences[contextPtr->currentFrame];
 		VkCommandBuffer commandBuffer = contextPtr->commandBuffers[contextPtr->currentFrame];
 
@@ -283,7 +281,6 @@ namespace mz {
 			return false;
 		}
 
-		UpdateUniformObject(contextPtr->currentFrame);
 
 		vkResetFences(contextPtr->device.logicalDevice, 1, &inFlightFence);
 
@@ -291,7 +288,53 @@ namespace mz {
 
 		vkResetCommandBuffer(commandBuffer, 0);
 
-		RecordCommandBuffer(commandBuffer, imageIndex);
+		VkCommandBufferBeginInfo beginInfo{};
+		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+
+		VK_CHECK(vkBeginCommandBuffer(commandBuffer, &beginInfo));
+
+		VkViewport viewport{};
+		viewport.x = 0.0f;
+		viewport.y = 0.0f;
+		viewport.width = (float)contextPtr->swapChain.extent.width;
+		viewport.height = (float)contextPtr->swapChain.extent.height;
+		viewport.minDepth = 0.0f;
+		viewport.maxDepth = 1.0f;
+		VkRect2D scissor{};
+		scissor.offset = { 0, 0 };
+		scissor.extent = contextPtr->swapChain.extent;
+
+		vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+		vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+
+		m_mainRenderPass->Begin(commandBuffer, imageIndex);
+
+		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, contextPtr->graphicsRenderingPipeline.handle);
+
+		vkCmdBindDescriptorSets(
+			commandBuffer,
+			VK_PIPELINE_BIND_POINT_GRAPHICS,
+			contextPtr->graphicsRenderingPipeline.layout,
+			0,
+			1,
+			&contextPtr->graphicsRenderingPipeline.descriptorSets[contextPtr->currentFrame],
+			0,
+			nullptr);
+
+		return true;
+	}
+
+	bool VulkanRendererBackend::EndFrame()
+	{
+		VkSemaphore imageAvailableSemaphore = contextPtr->swapChain.imageAvailableSemaphores[contextPtr->currentFrame];
+		VkCommandBuffer commandBuffer = contextPtr->commandBuffers[contextPtr->currentFrame];
+		VkSemaphore renderFinishedSemaphore = contextPtr->swapChain.renderFinishedSemaphores[contextPtr->currentFrame];
+		VkFence inFlightFence = contextPtr->swapChain.inFlightFences[contextPtr->currentFrame];
+		uint32_t imageIndex = contextPtr->swapChain.nextImageIndex;
+		
+		m_mainRenderPass->End(commandBuffer, imageIndex);
+
+		VK_CHECK(vkEndCommandBuffer(commandBuffer));
 
 		VkSubmitInfo submitInfo{};
 		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -329,7 +372,7 @@ namespace mz {
 		presentInfo.pSwapchains = swapChains;
 		presentInfo.pImageIndices = &imageIndex;
 
-		result = vkQueuePresentKHR(contextPtr->device.presentQueue, &presentInfo);
+		VkResult result = vkQueuePresentKHR(contextPtr->device.presentQueue, &presentInfo);
 
 		if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || contextPtr->framebufferResized) {
 			contextPtr->framebufferResized = false;
@@ -344,11 +387,6 @@ namespace mz {
 		return true;
 	}
 
-	bool VulkanRendererBackend::EndFrame()
-	{
-		return false;
-	}
-
 	void VulkanRendererBackend::OnResize()
 	{
 		contextPtr->framebufferResized = true;;
@@ -356,11 +394,31 @@ namespace mz {
 
 	void VulkanRendererBackend::UpdateGlobalState(RendererGlobalState globalState)
 	{
-		UpdateUniformObject(contextPtr->currentFrame);
+		static auto startTime = std::chrono::high_resolution_clock::now();
+
+		auto currentTime = std::chrono::high_resolution_clock::now();
+		float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+
+		UniformBufferObject ubo{};
+		ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+		ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+		ubo.proj = glm::perspective(glm::radians(45.0f), contextPtr->swapChain.extent.width / (float)contextPtr->swapChain.extent.height, 0.1f, 10.0f);
+		ubo.proj[1][1] *= -1;
+
+		memcpy(contextPtr->uniformBuffers[contextPtr->currentFrame].mapped, &ubo, sizeof(ubo));
 	}
 
 	void VulkanRendererBackend::DrawGeometries(RendererGeometryData geometryData)
 	{
+		VkCommandBuffer commandBuffer = contextPtr->commandBuffers[contextPtr->currentFrame];
+
+		VkBuffer vertexBuffers[] = { contextPtr->vertexBuffer };
+		VkDeviceSize offsets[] = { 0 };
+		vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+
+		vkCmdBindIndexBuffer(commandBuffer, contextPtr->indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+
+		vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
 	}
 
 	VKAPI_ATTR VkBool32 VKAPI_CALL VulkanRendererBackend::VulkanDebugCallback(
@@ -384,57 +442,6 @@ namespace mz {
 			break;
 		}
 		return VK_FALSE;
-	}
-
-	void VulkanRendererBackend::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex)
-	{
-		VkCommandBufferBeginInfo beginInfo{};
-		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-
-		if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS) {
-			MZ_CORE_ERROR("Failed to begin recording command buffer!");
-		}
-
-		m_mainRenderPass->Begin(commandBuffer, imageIndex);
-
-		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, contextPtr->graphicsRenderingPipeline.handle);
-
-		VkBuffer vertexBuffers[] = { contextPtr->vertexBuffer };
-		VkDeviceSize offsets[] = { 0 };
-		vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
-
-		vkCmdBindIndexBuffer(commandBuffer, contextPtr->indexBuffer, 0, VK_INDEX_TYPE_UINT32);
-
-		vkCmdBindDescriptorSets(
-			commandBuffer, 
-			VK_PIPELINE_BIND_POINT_GRAPHICS, 
-			contextPtr->graphicsRenderingPipeline.layout, 
-			0, 
-			1, 
-			&contextPtr->graphicsRenderingPipeline.descriptorSets[contextPtr->currentFrame], 
-			0, 
-			nullptr);
-
-
-		VkViewport viewport{};
-		viewport.x = 0.0f;
-		viewport.y = 0.0f;
-		viewport.width = (float)contextPtr->swapChain.extent.width;
-		viewport.height = (float)contextPtr->swapChain.extent.height;
-		viewport.minDepth = 0.0f;
-		viewport.maxDepth = 1.0f;
-		vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
-
-		VkRect2D scissor{};
-		scissor.offset = { 0, 0 };
-		scissor.extent = contextPtr->swapChain.extent;
-		vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
-
-		vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
-
-		m_mainRenderPass->End(commandBuffer, imageIndex);
-
-		VK_CHECK(vkEndCommandBuffer(commandBuffer));
 	}
 
 	void VulkanRendererBackend::CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
@@ -545,22 +552,6 @@ namespace mz {
 		}
 
 		return true;
-	}
-
-	void VulkanRendererBackend::UpdateUniformObject(uint32_t currentImage)
-	{
-		static auto startTime = std::chrono::high_resolution_clock::now();
-
-		auto currentTime = std::chrono::high_resolution_clock::now();
-		float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
-
-		UniformBufferObject ubo{};
-		ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-		ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-		ubo.proj = glm::perspective(glm::radians(45.0f), contextPtr->swapChain.extent.width / (float)contextPtr->swapChain.extent.height, 0.1f, 10.0f);
-		ubo.proj[1][1] *= -1;
-
-		memcpy(contextPtr->uniformBuffers[currentImage].mapped, &ubo, sizeof(ubo));
 	}
 
 	bool VulkanRendererBackend::CreateCommandBuffers() {

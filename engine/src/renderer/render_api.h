@@ -16,7 +16,6 @@ namespace mz {
 		RenderAPI(const RenderApiArgs args);
 		bool Initialize();
 		void Shutdown();
-		void OnResized(const uint16_t width, const uint16_t height);
 		bool DrawFrame();
 	};
 }

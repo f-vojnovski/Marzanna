@@ -26,14 +26,12 @@ namespace mz {
 		m_rendererBackend->Shutdown();
 	}
 	
-	void RenderAPI::OnResized(const uint16_t width, const uint16_t height) {
-
-	}
-
 	bool RenderAPI::DrawFrame() {
 		if (m_rendererBackend->BeginFrame()) {
 			RendererGlobalState globalState = {};
+			RendererGeometryData geometryData = {};
 			m_rendererBackend->UpdateGlobalState(globalState);
+			m_rendererBackend->DrawGeometries(geometryData);
 			return m_rendererBackend->EndFrame();
 		}
 	}
