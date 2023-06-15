@@ -39,6 +39,10 @@ namespace mz {
 	}
 
 	bool RenderAPI::DrawFrame() {
-		return m_rendererBackend->BeginFrame();
+		if (m_rendererBackend->BeginFrame()) {
+			RendererGlobalState globalState = {};
+			m_rendererBackend->UpdateGlobalState(globalState);
+			return m_rendererBackend->EndFrame();
+		}
 	}
 }

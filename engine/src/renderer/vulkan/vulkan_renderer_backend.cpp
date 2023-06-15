@@ -283,8 +283,6 @@ namespace mz {
 			return false;
 		}
 
-		UpdateUniformObject(contextPtr->currentFrame);
-
 		vkResetFences(contextPtr->device.logicalDevice, 1, &inFlightFence);
 
 		uint32_t imageIndex = contextPtr->swapChain.nextImageIndex;
@@ -352,6 +350,11 @@ namespace mz {
 	void VulkanRendererBackend::OnResize()
 	{
 		contextPtr->framebufferResized = true;;
+	}
+
+	void VulkanRendererBackend::UpdateGlobalState(RendererGlobalState globalState)
+	{
+		UpdateUniformObject(contextPtr->currentFrame);
 	}
 
 	VKAPI_ATTR VkBool32 VKAPI_CALL VulkanRendererBackend::VulkanDebugCallback(

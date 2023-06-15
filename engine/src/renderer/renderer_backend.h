@@ -9,6 +9,10 @@ namespace mz {
 		const Window* window;
 	};
 
+	struct RendererGlobalState {
+	
+	};
+
 	class RendererBackend {
 	protected:
 		std::string m_name;
@@ -18,6 +22,7 @@ namespace mz {
 		virtual bool BeginFrame() = 0;
 		virtual bool EndFrame() = 0;
 		virtual void OnResize() = 0;
+		virtual void UpdateGlobalState(RendererGlobalState globalState) = 0;
 		inline virtual ~RendererBackend() {}
 	};
 }
