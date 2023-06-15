@@ -22,6 +22,11 @@ namespace mz {
 		return true;
 	}
 
+	void RenderAPI::OnResize()
+	{
+		m_rendererBackend->OnResize();
+	}
+
 	void RenderAPI::Shutdown() {
 		m_rendererBackend->Shutdown();
 	}

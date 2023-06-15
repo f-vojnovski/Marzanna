@@ -20,6 +20,7 @@ namespace mz {
 		virtual void UpdateGlobalState(RendererGlobalState globalState) override;
 		virtual void DrawGeometries(RendererGeometryData geometryData) override;
 	private:
+		bool m_isMinimized = false;
 		std::shared_ptr<VulkanContext> contextPtr;
 		VkDebugUtilsMessengerEXT m_debugMessegner;
 		std::unique_ptr<VulkanDevice> m_device;

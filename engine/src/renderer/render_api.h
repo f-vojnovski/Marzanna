@@ -17,5 +17,6 @@ namespace mz {
 		bool Initialize();
 		void Shutdown();
 		bool DrawFrame();
+		void OnResize();
 	};
 }

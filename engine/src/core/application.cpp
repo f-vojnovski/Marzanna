@@ -70,9 +70,10 @@ namespace mz {
 		return true;
 	}
 
-	bool Application::OnWindowResize(WindowResizeEvent& e) {
-		
-		return false;
+	bool Application::OnWindowResize(WindowResizeEvent& e) 
+	{
+		m_renderApi->OnResize();
+		return true;
 	}
 	
 	void Application::PushLayer(Layer* layer)

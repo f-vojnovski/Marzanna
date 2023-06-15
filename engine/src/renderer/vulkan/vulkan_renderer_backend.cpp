@@ -265,6 +265,10 @@ namespace mz {
 
 	bool VulkanRendererBackend::BeginFrame()
 	{
+		if (m_isMinimized) {
+			return false;
+		}
+
 		VkFence inFlightFence = contextPtr->swapChain.inFlightFences[contextPtr->currentFrame];
 		VkCommandBuffer commandBuffer = contextPtr->commandBuffers[contextPtr->currentFrame];
 
@@ -280,7 +284,6 @@ namespace mz {
 			MZ_CORE_ERROR("Failed to acquire swap chain image!");
 			return false;
 		}
-
 
 		vkResetFences(contextPtr->device.logicalDevice, 1, &inFlightFence);
 
@@ -389,7 +392,12 @@ namespace mz {
 
 	void VulkanRendererBackend::OnResize()
 	{
-		contextPtr->framebufferResized = true;;
+		if (Application::Get().GetWindow().GetFramebufferWidth() == 0 || Application::Get().GetWindow().GetFramebufferHeight() == 0) {
+			m_isMinimized = true;
+		}
+		else {
+			m_isMinimized = false;
+		}
 	}
 
 	void VulkanRendererBackend::UpdateGlobalState(RendererGlobalState globalState)
