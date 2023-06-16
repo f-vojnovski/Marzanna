@@ -10,6 +10,10 @@ namespace mz {
 	Application::Application()
 	{
 		MZ_CORE_INFO("Running Marzanna engine...");	
+
+		MZ_ASSERT(!s_Instance, "Application already exists!");
+		s_Instance = this;
+
 		m_window = std::unique_ptr<Window>(Window::Create());
 		m_window->SetEventCallback(BIND_EVENT_FN(OnEvent));
 
@@ -18,8 +22,8 @@ namespace mz {
 
 		m_renderApi->Initialize();
 
-		MZ_ASSERT(!s_Instance, "Application already exists!");
-		s_Instance = this;
+		m_textureSystem = std::make_unique<TextureSystem>();
+		m_textureSystem->Acquire("vapor.png");
 	}
 
 	Application::~Application()
@@ -44,6 +48,7 @@ namespace mz {
 	}
 	void Application::Shutdown()
 	{
+		m_textureSystem->Shutdown();
 		m_renderApi->Shutdown();
 	}
 

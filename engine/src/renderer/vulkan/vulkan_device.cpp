@@ -212,18 +212,4 @@ namespace mz {
 		MZ_CORE_TRACE("Destroying graphics command pool...");
 		vkDestroyCommandPool(contextPtr->device.logicalDevice, contextPtr->device.graphicsCommandPool, nullptr);
 	}
-	
-	uint32_t VulkanDevice::FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties)
-	{
-		VkPhysicalDeviceMemoryProperties memProperties;
-		vkGetPhysicalDeviceMemoryProperties(contextPtr->device.physicalDevice, &memProperties);
-
-		for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
-			if ((typeFilter & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties) {
-				return i;
-			}
-		}
-
-		return -1;
-	}
 }

@@ -1,9 +1,10 @@
 #include "vulkan_renderer_backend.h"
 #include "vulkan_utils.h"
+#include "vulkan_functions.h"
 
 namespace mz {
 	const std::vector<Vertex2d> vertices = {
-		{{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+		{{-0.5f, -0.5f}, {0.0f, 0.0f, 0.0f}},
 		{{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
 		{{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
 		{{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}
@@ -18,6 +19,9 @@ namespace mz {
 		contextPtr = std::make_shared<VulkanContext>();
 		m_name = args.name;
 		contextPtr->window = args.window;
+
+		VulkanTexture::SetContextPointer(contextPtr);
+		VulkanFunctions::SetContextPointer(contextPtr);
 	}
 
 	bool VulkanRendererBackend::Initialize()
@@ -454,36 +458,13 @@ namespace mz {
 
 	void VulkanRendererBackend::CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
 	{
-		VkCommandBufferAllocateInfo allocInfo{};
-		allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-		allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-		allocInfo.commandPool = contextPtr->device.graphicsCommandPool;
-		allocInfo.commandBufferCount = 1;
-
-		VkCommandBuffer commandBuffer;
-		vkAllocateCommandBuffers(contextPtr->device.logicalDevice, &allocInfo, &commandBuffer);
-
-		VkCommandBufferBeginInfo beginInfo{};
-		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-		beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-
-		vkBeginCommandBuffer(commandBuffer, &beginInfo);
+		VkCommandBuffer commandBuffer = VulkanFunctions::BeginSingleUseCommands();
 
 		VkBufferCopy copyRegion{};
 		copyRegion.size = size;
 		vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
 
-		vkEndCommandBuffer(commandBuffer);
-
-		VkSubmitInfo submitInfo{};
-		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-		submitInfo.commandBufferCount = 1;
-		submitInfo.pCommandBuffers = &commandBuffer;
-
-		vkQueueSubmit(contextPtr->device.graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
-		vkQueueWaitIdle(contextPtr->device.graphicsQueue);
-
-		vkFreeCommandBuffers(contextPtr->device.logicalDevice, contextPtr->device.graphicsCommandPool, 1, &commandBuffer);
+		VulkanFunctions::EndSingleTimeCommands(commandBuffer);
 	}
 
 	bool VulkanRendererBackend::CreateDescriptorSetLayout()
@@ -583,7 +564,7 @@ namespace mz {
 
 		VkBuffer stagingBuffer;
 		VkDeviceMemory stagingBufferMemory;
-		if (!CreateBuffer(
+		if (!VulkanFunctions::CreateBuffer(
 			bufferSize,
 			VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
 			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
@@ -599,7 +580,7 @@ namespace mz {
 		memcpy(data, vertices.data(), (size_t)bufferSize);
 		vkUnmapMemory(contextPtr->device.logicalDevice, stagingBufferMemory);
 
-		if (!CreateBuffer(
+		if (!VulkanFunctions::CreateBuffer(
 			bufferSize,
 			VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
 			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
@@ -623,14 +604,14 @@ namespace mz {
 
 		VkBuffer stagingBuffer;
 		VkDeviceMemory stagingBufferMemory;
-		CreateBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
+		VulkanFunctions::CreateBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
 
 		void* data;
 		vkMapMemory(contextPtr->device.logicalDevice, stagingBufferMemory, 0, bufferSize, 0, &data);
 		memcpy(data, indices.data(), (size_t)bufferSize);
 		vkUnmapMemory(contextPtr->device.logicalDevice, stagingBufferMemory);
 
-		if (!CreateBuffer(
+		if (!VulkanFunctions::CreateBuffer(
 			bufferSize,
 			VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
 			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
@@ -655,7 +636,7 @@ namespace mz {
 		contextPtr->uniformBuffers.resize(MAX_FRAMES_IN_FLIGHT);
 
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-			if (!CreateBuffer(
+			if (!VulkanFunctions::CreateBuffer(
 				bufferSize,
 				VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
 				VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
@@ -666,36 +647,6 @@ namespace mz {
 
 			vkMapMemory(contextPtr->device.logicalDevice, contextPtr->uniformBuffers[i].memory, 0, bufferSize, 0, &contextPtr->uniformBuffers[i].mapped);
 		}
-
-		return true;
-	}
-
-	bool VulkanRendererBackend::CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory) {
-		VkBufferCreateInfo bufferInfo{};
-		bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-		bufferInfo.size = size;
-		bufferInfo.usage = usage;
-		bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-
-		if (vkCreateBuffer(contextPtr->device.logicalDevice, &bufferInfo, contextPtr->allocator, &buffer) != VK_SUCCESS) {
-			MZ_CORE_ERROR("Failed to create buffer!");
-			return false;
-		}
-
-		VkMemoryRequirements memRequirements;
-		vkGetBufferMemoryRequirements(contextPtr->device.logicalDevice, buffer, &memRequirements);
-
-		VkMemoryAllocateInfo allocInfo{};
-		allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-		allocInfo.allocationSize = memRequirements.size;
-		allocInfo.memoryTypeIndex = m_device->FindMemoryType(memRequirements.memoryTypeBits, properties);
-
-		if (vkAllocateMemory(contextPtr->device.logicalDevice, &allocInfo, contextPtr->allocator, &bufferMemory) != VK_SUCCESS) {
-			MZ_CORE_ERROR("Failed to allocate memory for buffer!");
-			return false;
-		}
-
-		vkBindBufferMemory(contextPtr->device.logicalDevice, buffer, bufferMemory, 0);
 
 		return true;
 	}

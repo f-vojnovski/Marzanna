@@ -5,6 +5,7 @@
 #include "engine/src/platform/windows_window.h"
 #include "engine/src/core/layer_stack.h"
 #include "engine/src/renderer/render_api.h"
+#include "engine/src/system/texture_system.h"
 
 namespace mz {
 	class Application {
@@ -20,8 +21,8 @@ namespace mz {
 		void PushOverlay(Layer* overlay);
 
 		inline static Application& Get() { return *s_Instance; }
-
 		inline Window& GetWindow() { return *m_window; }
+		inline RenderApiType GetRenderApiType() { return m_renderApi->GetType(); }
 	private:
 		bool m_isRunning = true;
 		bool m_isSuspended = false;
@@ -36,6 +37,7 @@ namespace mz {
 		LayerStack m_layerStack;
 
 		std::unique_ptr<RenderAPI> m_renderApi;
+		std::unique_ptr<TextureSystem> m_textureSystem;
 
 		static Application* s_Instance;
 	};

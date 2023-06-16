@@ -7,6 +7,7 @@
 #include "vulkan_swap_chain.h"
 #include "vulkan_pipeline.h"
 #include "vulkan_render_pass.h"
+#include "vulkan_texture.h"
 
 namespace mz {
 	class VulkanRendererBackend : public RendererBackend {
@@ -38,7 +39,6 @@ namespace mz {
 		bool CreateVertexBuffer();
 		bool CreateIndexBuffer();
 		bool CreateUniformBuffer();
-		bool CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
 		void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 		bool CreateDescriptorSetLayout();
 		bool CreateDescriptorPool();

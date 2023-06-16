@@ -21,7 +21,6 @@ namespace mz {
 		void Shutdown();
 		bool CreateGraphicsCommandPool();
 		void DestroyGraphicsCommandPool();
-		uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
 	};
 
 	const std::vector<const char*> VulkanDevice::s_requiredDeviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
