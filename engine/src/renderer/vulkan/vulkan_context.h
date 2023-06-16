@@ -32,6 +32,8 @@ namespace mz {
 		SwapChainSupportDetails swapChainDetails;
 
 		VkCommandPool graphicsCommandPool;
+
+		VkPhysicalDeviceProperties physicalDeviceProperties;
 	};
 
 	struct VulkanSwapChainInfo {
@@ -99,5 +101,7 @@ namespace mz {
 		bool framebufferResized = false;
 
 		std::vector<UniformBuffer> uniformBuffers;
+
+		VkSampler textureSampler;
 	};
 }

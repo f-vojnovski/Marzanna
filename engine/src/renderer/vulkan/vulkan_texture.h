@@ -13,7 +13,8 @@ namespace mz {
 	private:
 		inline static std::shared_ptr<VulkanContext> s_contextPtr = nullptr;
 
-		VkImage image;
-		VkDeviceMemory imageMemory;
+		VkImage m_image;
+		VkDeviceMemory m_imageMemory;
+		VkImageView m_imageView;
 	};
 }

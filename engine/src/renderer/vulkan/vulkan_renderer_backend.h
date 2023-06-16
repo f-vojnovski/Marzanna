@@ -43,6 +43,7 @@ namespace mz {
 		bool CreateDescriptorSetLayout();
 		bool CreateDescriptorPool();
 		bool CreateDescriptorSets();
+		bool CreateTextureSampler();
 		void UpdateUniformObject(uint32_t currentImage);
 	};
 }

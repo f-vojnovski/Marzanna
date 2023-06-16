@@ -22,6 +22,7 @@ namespace mz {
 
 		VulkanTexture::SetContextPointer(contextPtr);
 		VulkanFunctions::SetContextPointer(contextPtr);
+		VulkanDevice::SetContextPointer(contextPtr);
 	}
 
 	bool VulkanRendererBackend::Initialize()
@@ -116,7 +117,7 @@ namespace mz {
 		MZ_CORE_INFO("Vulkan surface created successfully!");
 
 		// Device creation
-		m_device = std::make_unique<VulkanDevice>(contextPtr);
+		m_device = std::make_unique<VulkanDevice>();
 
 		if (!m_device->SelectPhysicalDevice()) {
 			MZ_CORE_CRITICAL("Failed to select physical device!");
@@ -158,6 +159,12 @@ namespace mz {
 		// Command pool
 		if (!m_device->CreateGraphicsCommandPool()) {
 			MZ_CORE_CRITICAL("Failed to create graphics command pool!");
+			return false;
+		}
+
+		// Texture sampler
+		if (!CreateTextureSampler()) {
+			MZ_CORE_CRITICAL("Failed to create texture sampler!");
 			return false;
 		}
 
@@ -226,6 +233,8 @@ namespace mz {
 		// Vertex buffer
 		vkDestroyBuffer(contextPtr->device.logicalDevice, contextPtr->vertexBuffer, contextPtr->allocator);
 		vkFreeMemory(contextPtr->device.logicalDevice, contextPtr->vertexBufferMemory, contextPtr->allocator);
+
+		vkDestroySampler(contextPtr->device.logicalDevice, contextPtr->textureSampler, contextPtr->allocator);
 
 		// Command pool
 		m_device->DestroyGraphicsCommandPool();
@@ -538,6 +547,37 @@ namespace mz {
 			descriptorWrite.pBufferInfo = &bufferInfo;
 
 			vkUpdateDescriptorSets(contextPtr->device.logicalDevice, 1, &descriptorWrite, 0, nullptr);
+		}
+
+		return true;
+	}
+
+	bool VulkanRendererBackend::CreateTextureSampler()
+	{
+		VkSamplerCreateInfo samplerInfo{};
+		samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+		samplerInfo.magFilter = VK_FILTER_LINEAR;
+		samplerInfo.minFilter = VK_FILTER_LINEAR;
+
+		samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+		samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+		samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+
+		samplerInfo.anisotropyEnable = VK_TRUE;
+		samplerInfo.maxAnisotropy = contextPtr->device.physicalDeviceProperties.limits.maxSamplerAnisotropy;
+		samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+		samplerInfo.unnormalizedCoordinates = VK_FALSE;
+		samplerInfo.compareEnable = VK_FALSE;
+		samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
+
+		samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+		samplerInfo.mipLodBias = 0.0f;
+		samplerInfo.minLod = 0.0f;
+		samplerInfo.maxLod = 0.0f;
+
+		if (vkCreateSampler(contextPtr->device.logicalDevice, &samplerInfo, contextPtr->allocator, &contextPtr->textureSampler) != VK_SUCCESS) {
+			MZ_CORE_CRITICAL("Failed to create texture sampler!");
+			return false;
 		}
 
 		return true;

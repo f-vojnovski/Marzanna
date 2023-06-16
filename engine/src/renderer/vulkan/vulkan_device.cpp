@@ -2,16 +2,11 @@
 #include "engine/src/core/log.h"
 
 namespace mz {
-	VulkanDevice::VulkanDevice(std::shared_ptr<VulkanContext> contextPtr)
-	{
-		this->contextPtr = contextPtr;
-	}
-
 	bool VulkanDevice::SelectPhysicalDevice()
 	{
 		MZ_CORE_TRACE("Selecting physical device...");
 
-		auto instance = contextPtr->instance;
+		auto instance = s_contextPtr->instance;
 
 		uint32_t deviceCount = 0;
 		vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
@@ -25,18 +20,18 @@ namespace mz {
 		vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
 
 		for (const auto& device : devices) {
-			QueueFamilyIndices indices = FindQueueFamilies(device, contextPtr->surface);
-			SwapChainSupportDetails swapChainSupportDetails = QuerySwapChainSupport(device, contextPtr->surface);
+			QueueFamilyIndices indices = FindQueueFamilies(device, s_contextPtr->surface);
+			SwapChainSupportDetails swapChainSupportDetails = QuerySwapChainSupport(device, s_contextPtr->surface);
 
 			if (IsDeviceSuitable(device, indices, swapChainSupportDetails)) {
-				contextPtr->device.physicalDevice = device;
-				contextPtr->device.queueFamalies = indices;
-				contextPtr->device.swapChainDetails = swapChainSupportDetails;
+				s_contextPtr->device.physicalDevice = device;
+				s_contextPtr->device.queueFamalies = indices;
+				s_contextPtr->device.swapChainDetails = swapChainSupportDetails;
 				break;
 			}
 		}
 
-		if (contextPtr->device.physicalDevice == VK_NULL_HANDLE) {
+		if (s_contextPtr->device.physicalDevice == VK_NULL_HANDLE) {
 			return false;
 		}
 
@@ -49,7 +44,7 @@ namespace mz {
 		MZ_CORE_TRACE("Creating logical device...");
 
 		std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
-		std::set<uint32_t> uniqueQueueFamilies = { contextPtr->device.queueFamalies.graphicsFamily.value(), contextPtr->device.queueFamalies.presentFamily.value() };
+		std::set<uint32_t> uniqueQueueFamilies = { s_contextPtr->device.queueFamalies.graphicsFamily.value(), s_contextPtr->device.queueFamalies.presentFamily.value() };
 
 		float queuePriority = 1.0f;
 		for (uint32_t queueFamily : uniqueQueueFamilies) {
@@ -62,6 +57,7 @@ namespace mz {
 		}
 
 		VkPhysicalDeviceFeatures deviceFeatures{};
+		deviceFeatures.samplerAnisotropy = VK_TRUE;
 		
 		VkDeviceCreateInfo createInfo{};
 		createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -71,18 +67,18 @@ namespace mz {
 
 		createInfo.pEnabledFeatures = &deviceFeatures;
 
-		createInfo.enabledLayerCount = static_cast<uint32_t>(contextPtr->validationLayers.size());
-		createInfo.ppEnabledLayerNames = contextPtr->validationLayers.data();
+		createInfo.enabledLayerCount = static_cast<uint32_t>(s_contextPtr->validationLayers.size());
+		createInfo.ppEnabledLayerNames = s_contextPtr->validationLayers.data();
 
 		createInfo.enabledExtensionCount = static_cast<uint32_t>(s_requiredDeviceExtensions.size());
 		createInfo.ppEnabledExtensionNames = s_requiredDeviceExtensions.data();
 
-		if (vkCreateDevice(contextPtr->device.physicalDevice, &createInfo, contextPtr->allocator, &contextPtr->device.logicalDevice) != VK_SUCCESS) {
+		if (vkCreateDevice(s_contextPtr->device.physicalDevice, &createInfo, s_contextPtr->allocator, &s_contextPtr->device.logicalDevice) != VK_SUCCESS) {
 			return false;
 		}
 
-		vkGetDeviceQueue(contextPtr->device.logicalDevice, contextPtr->device.queueFamalies.graphicsFamily.value(), 0, &contextPtr->device.graphicsQueue);
-		vkGetDeviceQueue(contextPtr->device.logicalDevice, contextPtr->device.queueFamalies.presentFamily.value(), 0, &contextPtr->device.presentQueue);
+		vkGetDeviceQueue(s_contextPtr->device.logicalDevice, s_contextPtr->device.queueFamalies.graphicsFamily.value(), 0, &s_contextPtr->device.graphicsQueue);
+		vkGetDeviceQueue(s_contextPtr->device.logicalDevice, s_contextPtr->device.queueFamalies.presentFamily.value(), 0, &s_contextPtr->device.presentQueue);
 
 		MZ_CORE_INFO("Created logical device!");
 		return true;
@@ -115,7 +111,7 @@ namespace mz {
 
 	void VulkanDevice::Shutdown() {
 		MZ_CORE_TRACE("Destroying device...");
-		vkDestroyDevice(contextPtr->device.logicalDevice, contextPtr->allocator);
+		vkDestroyDevice(s_contextPtr->device.logicalDevice, s_contextPtr->allocator);
 	}
 	
 	QueueFamilyIndices VulkanDevice::FindQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surface)
@@ -155,13 +151,12 @@ namespace mz {
 			return false;
 		}
 		
-		VkPhysicalDeviceProperties deviceProperties;
-		vkGetPhysicalDeviceProperties(device, &deviceProperties);
+		vkGetPhysicalDeviceProperties(device, &s_contextPtr->device.physicalDeviceProperties);
 		
 		VkPhysicalDeviceFeatures deviceFeatures;
 		vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
 
-		if (!deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU ||
+		if (!s_contextPtr->device.physicalDeviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU ||
 			!deviceFeatures.geometryShader) {
 			return false;
 		}
@@ -171,6 +166,10 @@ namespace mz {
 		}
 
 		if (swapChainDetails.formats.empty() || swapChainDetails.presentModes.empty()) {
+			return false;
+		}
+
+		if (!deviceFeatures.samplerAnisotropy) {
 			return false;
 		}
 
@@ -198,9 +197,9 @@ namespace mz {
 		VkCommandPoolCreateInfo poolInfo{};
 		poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
 		poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-		poolInfo.queueFamilyIndex = contextPtr->device.queueFamalies.graphicsFamily.value();
+		poolInfo.queueFamilyIndex = s_contextPtr->device.queueFamalies.graphicsFamily.value();
 
-		if (vkCreateCommandPool(contextPtr->device.logicalDevice, &poolInfo, nullptr, &contextPtr->device.graphicsCommandPool) != VK_SUCCESS) {
+		if (vkCreateCommandPool(s_contextPtr->device.logicalDevice, &poolInfo, s_contextPtr->allocator, &s_contextPtr->device.graphicsCommandPool) != VK_SUCCESS) {
 			MZ_CORE_ERROR("Failed to create graphics command pool!");
 			return false;
 		}
@@ -210,6 +209,6 @@ namespace mz {
 
 	void VulkanDevice::DestroyGraphicsCommandPool() {
 		MZ_CORE_TRACE("Destroying graphics command pool...");
-		vkDestroyCommandPool(contextPtr->device.logicalDevice, contextPtr->device.graphicsCommandPool, nullptr);
+		vkDestroyCommandPool(s_contextPtr->device.logicalDevice, s_contextPtr->device.graphicsCommandPool, s_contextPtr->allocator);
 	}
 }
