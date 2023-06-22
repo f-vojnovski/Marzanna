@@ -8,6 +8,11 @@ namespace mz {
 		glm::vec3 color;
 	};
 
+	struct Vertex3d {
+		glm::vec3 pos;
+		glm::vec3 color;
+	};
+
 	struct UniformBufferObject {
 		glm::mat4 model;
 		glm::mat4 view;

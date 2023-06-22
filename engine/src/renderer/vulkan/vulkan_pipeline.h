@@ -19,5 +19,8 @@ namespace mz {
 		
 		static VkVertexInputBindingDescription Vertex2dGetBindingDescription();
 		static std::array<VkVertexInputAttributeDescription, 2> Vertex2dGetAttributeDescriptions();
+
+		static 	VkVertexInputBindingDescription VulkanPipeline::Vertex3dGetBindingDescription();
+		static std::array<VkVertexInputAttributeDescription, 2> Vertex3dGetAttributeDescriptions();
 	};
 }

@@ -39,8 +39,8 @@ namespace mz {
 
 		/* Fixed function stages begin */
 
-		auto bindingDescription = VulkanPipeline::Vertex2dGetBindingDescription();
-		auto attributeDescriptions = VulkanPipeline::Vertex2dGetAttributeDescriptions();
+		auto bindingDescription = VulkanPipeline::Vertex3dGetBindingDescription();
+		auto attributeDescriptions = VulkanPipeline::Vertex3dGetAttributeDescriptions();
 		
 		// Vertex input info
 		VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
@@ -205,6 +205,34 @@ namespace mz {
 		attributeDescriptions[1].location = 1;
 		attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
 		attributeDescriptions[1].offset = offsetof(Vertex2d, color);
+
+		return attributeDescriptions;
+	}
+	
+	
+	VkVertexInputBindingDescription VulkanPipeline::Vertex3dGetBindingDescription()
+	{
+		VkVertexInputBindingDescription bindingDescription{};
+		bindingDescription.binding = 0;
+		bindingDescription.stride = sizeof(Vertex3d);
+		bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+		return bindingDescription;
+	}
+
+	std::array<VkVertexInputAttributeDescription, 2> VulkanPipeline::Vertex3dGetAttributeDescriptions()
+	{
+		std::array<VkVertexInputAttributeDescription, 2> attributeDescriptions{};
+
+		attributeDescriptions[0].binding = 0;
+		attributeDescriptions[0].location = 0;
+		attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
+		attributeDescriptions[0].offset = offsetof(Vertex3d, pos);
+
+		attributeDescriptions[1].binding = 0;
+		attributeDescriptions[1].location = 1;
+		attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
+		attributeDescriptions[1].offset = offsetof(Vertex3d, color);
 
 		return attributeDescriptions;
 	}

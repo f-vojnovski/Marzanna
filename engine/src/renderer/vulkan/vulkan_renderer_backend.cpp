@@ -3,15 +3,45 @@
 #include "vulkan_functions.h"
 
 namespace mz {
-	const std::vector<Vertex2d> vertices = {
-		{{-0.5f, -0.5f}, {0.0f, 0.0f, 0.0f}},
-		{{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
-		{{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
-		{{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}
+	const std::vector<Vertex3d> vertices = {
+		// Front face
+		{{-0.5f, -0.5f, +0.5f}, {1.0f, 0.0f, 0.0f}},
+		{{+0.5f, -0.5f, +0.5f}, {0.0f, 1.0f, 0.0f}},
+		{{+0.5f, +0.5f, +0.5f}, {0.0f, 0.0f, 1.0f}},
+		{{-0.5f, +0.5f, +0.5f}, {1.0f, 1.0f, 1.0f}},
+
+		// Back face
+		{{-0.5f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+		{{+0.5f, -0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
+		{{+0.5f, +0.5f, -0.5f}, {0.0f, 0.0f, 1.0f}},
+		{{-0.5f, +0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}}
 	};
 
 	const std::vector<uint32_t> indices = {
-		0, 1, 2, 2, 3, 0
+		// Front face
+	   0, 1, 2,
+	   2, 3, 0,
+
+	   // Back face
+	   4, 5, 6,
+	   6, 7, 4,
+
+	   // Top face
+	   3, 2, 6,
+	   6, 7, 3,
+
+	   // Bottom face
+	   0, 1, 5,
+	   5, 4, 0,
+
+	   // Right face
+	   1, 2, 6,
+	   2, 5, 6,
+
+	   // Left face
+	   0, 3, 7,
+	   7, 4, 0
+
 	};
 
 	VulkanRendererBackend::VulkanRendererBackend(const RendererBackendArgs args)
