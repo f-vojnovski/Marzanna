@@ -5,16 +5,16 @@
 namespace mz {
 	const std::vector<Vertex3d> vertices = {
 		// Front face
-		{{-0.5f, -0.5f, +0.5f}, {1.0f, 0.0f, 0.0f}},
-		{{+0.5f, -0.5f, +0.5f}, {0.0f, 1.0f, 0.0f}},
-		{{+0.5f, +0.5f, +0.5f}, {0.0f, 0.0f, 1.0f}},
-		{{-0.5f, +0.5f, +0.5f}, {1.0f, 1.0f, 1.0f}},
+		{{-0.5f, -0.5f, +0.5f}, {1.0f, 0.0f, 0.0f}, {0, 0}},
+		{{+0.5f, -0.5f, +0.5f}, {0.0f, 1.0f, 0.0f}, {0, 0}},
+		{{+0.5f, +0.5f, +0.5f}, {0.0f, 0.0f, 1.0f}, {0, 0}},
+		{{-0.5f, +0.5f, +0.5f}, {1.0f, 1.0f, 1.0f}, {0, 0}},
 
 		// Back face
-		{{-0.5f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-		{{+0.5f, -0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
-		{{+0.5f, +0.5f, -0.5f}, {0.0f, 0.0f, 1.0f}},
-		{{-0.5f, +0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}}
+		{{-0.5f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {0, 0}},
+		{{+0.5f, -0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {0, 0}},
+		{{+0.5f, +0.5f, -0.5f}, {0.0f, 0.0f, 1.0f}, {0, 0}},
+		{{-0.5f, +0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {0, 0}}
 	};
 
 	const std::vector<uint32_t> indices = {
@@ -53,6 +53,7 @@ namespace mz {
 		VulkanTexture::SetContextPointer(contextPtr);
 		VulkanFunctions::SetContextPointer(contextPtr);
 		VulkanDevice::SetContextPointer(contextPtr);
+		VulkanSwapChain::SetContextPointer(contextPtr);
 	}
 
 	bool VulkanRendererBackend::Initialize()
@@ -160,8 +161,13 @@ namespace mz {
 		}
 
 		// Swap chain creation
-		m_swapChain = std::make_shared<VulkanSwapChain>(contextPtr);
+		m_swapChain = std::make_shared<VulkanSwapChain>();
 		m_swapChain->Create();
+
+		// Depth resources
+		if (!VulkanSwapChain::CreateDepthResources()) {
+			return false;
+		}
 
 		// Main render pass
 		m_mainRenderPass = std::make_unique<VulkanRenderPass>(contextPtr);
@@ -282,6 +288,9 @@ namespace mz {
 		
 		// Main renderpass
 		m_mainRenderPass->Destroy();
+
+		// Depth resources
+		m_swapChain->DestroyDepthResources();
 		
 		// Swap chain
 		m_swapChain->Destroy();

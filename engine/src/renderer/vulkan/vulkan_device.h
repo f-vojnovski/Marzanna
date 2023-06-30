@@ -14,6 +14,8 @@ namespace mz {
 		void Shutdown();
 		bool CreateGraphicsCommandPool();
 		void DestroyGraphicsCommandPool();
+		static bool FindDepthFormat();
+		static bool FindSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features, VkFormat& outFormat);
 
 		inline static void SetContextPointer(std::shared_ptr<VulkanContext> contextPtr) { s_contextPtr = contextPtr; }
 	private:

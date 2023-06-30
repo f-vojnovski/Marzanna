@@ -192,6 +192,42 @@ namespace mz {
 		return requiredExtensions.empty();
 	}
 
+	bool VulkanDevice::FindDepthFormat()
+	{
+		if (FindSupportedFormat(
+			{ VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT },
+			VK_IMAGE_TILING_OPTIMAL,
+			VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT,
+			s_contextPtr->device.depthFormat)) 
+		{
+			MZ_CORE_TRACE("Found device depth format!");
+			return true;
+		}
+
+		MZ_CORE_CRITICAL("Failed to find depth format for device!");
+
+		return false;
+	}
+	
+	bool VulkanDevice::FindSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features, VkFormat& outFormat)
+	{
+		for (VkFormat format : candidates) {
+			VkFormatProperties props;
+			vkGetPhysicalDeviceFormatProperties(s_contextPtr->device.physicalDevice, format, &props);
+
+			if (tiling == VK_IMAGE_TILING_LINEAR && (props.linearTilingFeatures & features) == features) {
+				outFormat = format;
+				return true;
+			}
+			else if (tiling == VK_IMAGE_TILING_OPTIMAL && (props.optimalTilingFeatures & features) == features) {
+				outFormat = format;
+				return true;
+			}
+		}
+
+		return false;
+	}
+
 	bool VulkanDevice::CreateGraphicsCommandPool() {
 		MZ_CORE_TRACE("Creating graphics command pool...");
 		VkCommandPoolCreateInfo poolInfo{};

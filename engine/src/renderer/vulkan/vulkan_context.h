@@ -34,6 +34,8 @@ namespace mz {
 		VkCommandPool graphicsCommandPool;
 
 		VkPhysicalDeviceProperties physicalDeviceProperties;
+
+		VkFormat depthFormat;
 	};
 
 	struct VulkanSwapChainInfo {
@@ -53,6 +55,10 @@ namespace mz {
 		uint32_t nextImageIndex;
 
 		std::vector<VkFramebuffer> framebuffers;
+
+		VkImage depthImage;
+		VkDeviceMemory depthImageMemory;
+		VkImageView depthImageView;
 
 		bool recreating = false;
 	};

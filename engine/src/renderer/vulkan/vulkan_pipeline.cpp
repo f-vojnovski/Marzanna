@@ -103,6 +103,15 @@ namespace mz {
 		multisampling.alphaToCoverageEnable = VK_FALSE;
 		multisampling.alphaToOneEnable = VK_FALSE;
 
+		// Depth & stencil
+		VkPipelineDepthStencilStateCreateInfo depthStencil{};
+		depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+		depthStencil.depthTestEnable = VK_TRUE;
+		depthStencil.depthWriteEnable = VK_TRUE;
+		depthStencil.depthCompareOp = VK_COMPARE_OP_LESS;
+		depthStencil.depthBoundsTestEnable = VK_FALSE;
+		depthStencil.stencilTestEnable = VK_FALSE;
+
 		// Color blending
 		VkPipelineColorBlendAttachmentState colorBlendAttachment{};
 		colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
@@ -154,7 +163,7 @@ namespace mz {
 		pipelineInfo.layout = contextPtr->graphicsRenderingPipeline.layout;
 		pipelineInfo.renderPass = renderPass;
 		pipelineInfo.subpass = 0;
-		pipelineInfo.pDepthStencilState = nullptr;
+		pipelineInfo.pDepthStencilState = &depthStencil;
 		pipelineInfo.pTessellationState = nullptr;
 		pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
 
@@ -220,9 +229,9 @@ namespace mz {
 		return bindingDescription;
 	}
 
-	std::array<VkVertexInputAttributeDescription, 2> VulkanPipeline::Vertex3dGetAttributeDescriptions()
+	std::array<VkVertexInputAttributeDescription, 3> VulkanPipeline::Vertex3dGetAttributeDescriptions()
 	{
-		std::array<VkVertexInputAttributeDescription, 2> attributeDescriptions{};
+		std::array<VkVertexInputAttributeDescription, 3> attributeDescriptions{};
 
 		attributeDescriptions[0].binding = 0;
 		attributeDescriptions[0].location = 0;
@@ -233,6 +242,11 @@ namespace mz {
 		attributeDescriptions[1].location = 1;
 		attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
 		attributeDescriptions[1].offset = offsetof(Vertex3d, color);
+
+		attributeDescriptions[2].binding = 0;
+		attributeDescriptions[2].location = 2;
+		attributeDescriptions[2].format = VK_FORMAT_R32G32_SFLOAT;
+		attributeDescriptions[2].offset = offsetof(Vertex3d, texCoord);
 
 		return attributeDescriptions;
 	}

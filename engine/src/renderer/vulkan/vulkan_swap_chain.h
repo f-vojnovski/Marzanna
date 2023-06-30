@@ -5,14 +5,7 @@
 
 namespace mz {
 	class VulkanSwapChain {
-	private:
-		std::shared_ptr<VulkanContext> contextPtr;
-
-		void ChooseSurfaceFormat();
-		void ChoosePresentMode();
-		void ChooseExtent();
 	public:
-		VulkanSwapChain(std::shared_ptr<VulkanContext> contextPtr);
 		void Create();
 		void Destroy();
 		void CreateImageViews();
@@ -23,5 +16,15 @@ namespace mz {
 		VkResult AcquireNextImageIndex();
 		void Cleanup();
 		bool Recreate();
+		static bool CreateDepthResources();
+		static void DestroyDepthResources();
+		inline static void SetContextPointer(std::shared_ptr<VulkanContext> contextPtr) { s_contextPtr = contextPtr; }
+	private:
+		inline static std::shared_ptr<VulkanContext> s_contextPtr = nullptr;
+
+		void ChooseSurfaceFormat();
+		void ChoosePresentMode();
+		void ChooseExtent();
+
 	};
 }

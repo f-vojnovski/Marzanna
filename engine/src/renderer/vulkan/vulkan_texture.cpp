@@ -39,7 +39,7 @@ namespace mz {
 		VulkanFunctions::TransitionImageLayout(m_image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
 		// Create image view for the texture
-		m_imageView = VulkanFunctions::CreateImageView(m_image, VK_FORMAT_R8G8B8A8_SRGB);
+		m_imageView = VulkanFunctions::CreateImageView(m_image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
 
 		// Destroy temporary buffer
 		vkDestroyBuffer(s_contextPtr->device.logicalDevice, stagingBuffer, s_contextPtr->allocator);

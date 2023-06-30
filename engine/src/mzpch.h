@@ -14,8 +14,9 @@
 #include <limits>
 #include <algorithm>
 #include <fstream>
-#include <glm/glm.hpp>
 #define GLM_FORCE_RADIANS
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
+#include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <chrono>
 #define STB_IMAGE_IMPLEMENTATION
