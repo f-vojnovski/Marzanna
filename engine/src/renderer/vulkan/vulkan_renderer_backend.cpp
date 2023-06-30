@@ -641,7 +641,7 @@ namespace mz {
 	}
 	bool VulkanRendererBackend::CreateVertexBuffer()
 	{
-		VkDeviceSize bufferSize = sizeof(Vertex2d) * vertices.size();
+		VkDeviceSize bufferSize = sizeof(Vertex3d) * vertices.size();
 
 		VkBuffer stagingBuffer;
 		VkDeviceMemory stagingBufferMemory;
