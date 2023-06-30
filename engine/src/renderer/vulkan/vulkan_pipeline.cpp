@@ -3,10 +3,6 @@
 #include "engine/src/system/file_reader.h"
 
 namespace mz {
-	VulkanPipeline::VulkanPipeline(std::shared_ptr<VulkanContext> contextPtr) {
-		this->contextPtr = contextPtr;
-	}
-
 	bool VulkanPipeline::Create(VkRenderPass renderPass)
 	{
 		MZ_CORE_TRACE("Creating Vulkan graphics rendering pipeline...");
@@ -17,7 +13,7 @@ namespace mz {
 		auto fragShaderCode = EngineReadFile(s_engineMaterialShaderFragmentFileName);
 
 		// Vertex shader
-		auto vertexShadingModule = CreateShaderModule(vertShaderCode, contextPtr->device.logicalDevice);
+		auto vertexShadingModule = CreateShaderModule(vertShaderCode, s_contextPtr->device.logicalDevice);
 		VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
 		vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 		vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
@@ -25,7 +21,7 @@ namespace mz {
 		vertShaderStageInfo.pName = "main";
 
 		// Fragment shader
-		auto fragmentShaderModule = CreateShaderModule(fragShaderCode, contextPtr->device.logicalDevice);
+		auto fragmentShaderModule = CreateShaderModule(fragShaderCode, s_contextPtr->device.logicalDevice);
 		VkPipelineShaderStageCreateInfo fragShaderStageInfo{};
 		fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 		fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
@@ -61,8 +57,8 @@ namespace mz {
 		viewport.x = 0.0f;
 		viewport.y = 0.0f;
 
-		float width = (float)contextPtr->swapChain.extent.width;
-		float height = (float)contextPtr->swapChain.extent.height;
+		float width = (float)s_contextPtr->swapChain.extent.width;
+		float height = (float)s_contextPtr->swapChain.extent.height;
 
 		viewport.width = width;
 		viewport.height = height;
@@ -142,10 +138,10 @@ namespace mz {
 		VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
 		pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 		pipelineLayoutInfo.setLayoutCount = 1;
-		pipelineLayoutInfo.pSetLayouts = &contextPtr->graphicsRenderingPipeline.descriptorSetLayout;
+		pipelineLayoutInfo.pSetLayouts = &s_contextPtr->graphicsRenderingPipeline.descriptorSetLayout;
 		pipelineLayoutInfo.pushConstantRangeCount = 0;
 
-		if (vkCreatePipelineLayout(contextPtr->device.logicalDevice, &pipelineLayoutInfo, contextPtr->allocator, &contextPtr->graphicsRenderingPipeline.layout) != VK_SUCCESS) {
+		if (vkCreatePipelineLayout(s_contextPtr->device.logicalDevice, &pipelineLayoutInfo, s_contextPtr->allocator, &s_contextPtr->graphicsRenderingPipeline.layout) != VK_SUCCESS) {
 			throw std::runtime_error("failed to create pipeline layout!");
 		}
 
@@ -160,20 +156,20 @@ namespace mz {
 		pipelineInfo.pMultisampleState = &multisampling;
 		pipelineInfo.pColorBlendState = &colorBlending;
 		pipelineInfo.pDynamicState = &dynamicState;
-		pipelineInfo.layout = contextPtr->graphicsRenderingPipeline.layout;
+		pipelineInfo.layout = s_contextPtr->graphicsRenderingPipeline.layout;
 		pipelineInfo.renderPass = renderPass;
 		pipelineInfo.subpass = 0;
 		pipelineInfo.pDepthStencilState = &depthStencil;
 		pipelineInfo.pTessellationState = nullptr;
 		pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
 
-		if (vkCreateGraphicsPipelines(contextPtr->device.logicalDevice, VK_NULL_HANDLE, 1, &pipelineInfo, contextPtr->allocator, &contextPtr->graphicsRenderingPipeline.handle) != VK_SUCCESS) {
+		if (vkCreateGraphicsPipelines(s_contextPtr->device.logicalDevice, VK_NULL_HANDLE, 1, &pipelineInfo, s_contextPtr->allocator, &s_contextPtr->graphicsRenderingPipeline.handle) != VK_SUCCESS) {
 			MZ_CORE_ERROR("Failed to create graphics pipeline!");
 			return false;
 		}
 
-		vkDestroyShaderModule(contextPtr->device.logicalDevice, fragmentShaderModule, contextPtr->allocator);
-		vkDestroyShaderModule(contextPtr->device.logicalDevice, vertexShadingModule, contextPtr->allocator);
+		vkDestroyShaderModule(s_contextPtr->device.logicalDevice, fragmentShaderModule, s_contextPtr->allocator);
+		vkDestroyShaderModule(s_contextPtr->device.logicalDevice, vertexShadingModule, s_contextPtr->allocator);
 
 		MZ_CORE_INFO("Vulkan graphics rendering pipeline created!");
 
@@ -183,13 +179,13 @@ namespace mz {
 	void VulkanPipeline::Destroy()
 	{
 		MZ_CORE_TRACE("Destroying Vulkan graphics pipeline...");
-		vkDestroyPipelineLayout(contextPtr->device.logicalDevice, contextPtr->graphicsRenderingPipeline.layout, contextPtr->allocator);
-		vkDestroyPipeline(contextPtr->device.logicalDevice, contextPtr->graphicsRenderingPipeline.handle, contextPtr->allocator);
+		vkDestroyPipelineLayout(s_contextPtr->device.logicalDevice, s_contextPtr->graphicsRenderingPipeline.layout, s_contextPtr->allocator);
+		vkDestroyPipeline(s_contextPtr->device.logicalDevice, s_contextPtr->graphicsRenderingPipeline.handle, s_contextPtr->allocator);
 	}
 	
 	void VulkanPipeline::Bind(VkCommandBuffer commandBuffer)
 	{
-		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, contextPtr->graphicsRenderingPipeline.handle);
+		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, s_contextPtr->graphicsRenderingPipeline.handle);
 	}
 	
 	VkVertexInputBindingDescription VulkanPipeline::Vertex2dGetBindingDescription()

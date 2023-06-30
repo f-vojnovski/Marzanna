@@ -6,13 +6,7 @@
 
 namespace mz {
 	class VulkanPipeline {
-	private:
-		inline static const std::string s_engineMaterialShaderFragmentFileName = "assets/shaders/engine-material-shader.frag.spv";
-		inline static const std::string s_engineMaterialShaderVertexFileName = "assets/shaders/engine-material-shader.vert.spv";
-
-		std::shared_ptr<VulkanContext> contextPtr;
 	public:
-		VulkanPipeline(std::shared_ptr<VulkanContext> contextPtr);
 		bool Create(VkRenderPass renderPass);
 		void Destroy();
 		void Bind(VkCommandBuffer commandBuffer);
@@ -22,5 +16,12 @@ namespace mz {
 
 		static 	VkVertexInputBindingDescription VulkanPipeline::Vertex3dGetBindingDescription();
 		static std::array<VkVertexInputAttributeDescription, 3> Vertex3dGetAttributeDescriptions();
+	
+		inline static void SetContextPointer(std::shared_ptr<VulkanContext> contextPtr) { s_contextPtr = contextPtr; }
+	private:
+		inline static std::shared_ptr<VulkanContext> s_contextPtr = nullptr;
+
+		inline static const std::string s_engineMaterialShaderFragmentFileName = "assets/shaders/engine-material-shader.frag.spv";
+		inline static const std::string s_engineMaterialShaderVertexFileName = "assets/shaders/engine-material-shader.vert.spv";
 	};
 }

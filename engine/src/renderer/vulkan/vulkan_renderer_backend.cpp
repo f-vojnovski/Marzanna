@@ -4,44 +4,46 @@
 
 namespace mz {
 	const std::vector<Vertex3d> vertices = {
-		// Front face
-		{{-0.5f, -0.5f, +0.5f}, {1.0f, 0.0f, 0.0f}, {0, 0}},
-		{{+0.5f, -0.5f, +0.5f}, {0.0f, 1.0f, 0.0f}, {0, 0}},
-		{{+0.5f, +0.5f, +0.5f}, {0.0f, 0.0f, 1.0f}, {0, 0}},
-		{{-0.5f, +0.5f, +0.5f}, {1.0f, 1.0f, 1.0f}, {0, 0}},
+		// left face (white)
+		{{-.5f, -.5f, -.5f}, {.9f, .9f, .9f}},
+		{{-.5f, .5f, .5f}, {.9f, .9f, .9f}},
+		{{-.5f, -.5f, .5f}, {.9f, .9f, .9f}},
+		{{-.5f, .5f, -.5f}, {.9f, .9f, .9f}},
 
-		// Back face
-		{{-0.5f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {0, 0}},
-		{{+0.5f, -0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {0, 0}},
-		{{+0.5f, +0.5f, -0.5f}, {0.0f, 0.0f, 1.0f}, {0, 0}},
-		{{-0.5f, +0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {0, 0}}
+		// right face (yellow)
+		{{.5f, -.5f, -.5f}, {.8f, .8f, .1f}},
+		{{.5f, .5f, .5f}, {.8f, .8f, .1f}},
+		{{.5f, -.5f, .5f}, {.8f, .8f, .1f}},
+		{{.5f, .5f, -.5f}, {.8f, .8f, .1f}},
+
+		// top face (orange, remember y axis points down)
+		{{-.5f, -.5f, -.5f}, {.9f, .6f, .1f}},
+		{{.5f, -.5f, .5f}, {.9f, .6f, .1f}},
+		{{-.5f, -.5f, .5f}, {.9f, .6f, .1f}},
+		{{.5f, -.5f, -.5f}, {.9f, .6f, .1f}},
+
+		// bottom face (red)
+		{{-.5f, .5f, -.5f}, {.8f, .1f, .1f}},
+		{{.5f, .5f, .5f}, {.8f, .1f, .1f}},
+		{{-.5f, .5f, .5f}, {.8f, .1f, .1f}},
+		{{.5f, .5f, -.5f}, {.8f, .1f, .1f}},
+
+		// nose face (blue)
+		{{-.5f, -.5f, 0.5f}, {.1f, .1f, .8f}},
+		{{.5f, .5f, 0.5f}, {.1f, .1f, .8f}},
+		{{-.5f, .5f, 0.5f}, {.1f, .1f, .8f}},
+		{{.5f, -.5f, 0.5f}, {.1f, .1f, .8f}},
+
+		// tail face (green)
+		{{-.5f, -.5f, -0.5f}, {.1f, .8f, .1f}},
+		{{.5f, .5f, -0.5f}, {.1f, .8f, .1f}},
+		{{-.5f, .5f, -0.5f}, {.1f, .8f, .1f}},
+		{{.5f, -.5f, -0.5f}, {.1f, .8f, .1f}},
 	};
 
 	const std::vector<uint32_t> indices = {
-		// Front face
-	   0, 1, 2,
-	   2, 3, 0,
-
-	   // Back face
-	   4, 5, 6,
-	   6, 7, 4,
-
-	   // Top face
-	   3, 2, 6,
-	   6, 7, 3,
-
-	   // Bottom face
-	   0, 1, 5,
-	   5, 4, 0,
-
-	   // Right face
-	   1, 2, 6,
-	   2, 5, 6,
-
-	   // Left face
-	   0, 3, 7,
-	   7, 4, 0
-
+		0,  1,  2,  0,  3,  1,  4,  5,  6,  4,  7,  5,  8,  9,  10, 8,  11, 9,
+		12, 13, 14, 12, 15, 13, 16, 17, 18, 16, 19, 17, 20, 21, 22, 20, 23, 21
 	};
 
 	VulkanRendererBackend::VulkanRendererBackend(const RendererBackendArgs args)
@@ -54,6 +56,7 @@ namespace mz {
 		VulkanFunctions::SetContextPointer(contextPtr);
 		VulkanDevice::SetContextPointer(contextPtr);
 		VulkanSwapChain::SetContextPointer(contextPtr);
+		VulkanPipeline::SetContextPointer(contextPtr);
 	}
 
 	bool VulkanRendererBackend::Initialize()
@@ -183,7 +186,6 @@ namespace mz {
 		}
 
 		// Pipeline creation
-		m_pipeline = std::make_unique<VulkanPipeline>(contextPtr);
 		if (!m_pipeline->Create(contextPtr->mainRenderPass.handle)) {
 			MZ_CORE_CRITICAL("Failed to create Vulkan graphics pipeline!");
 			return false;
