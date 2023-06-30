@@ -57,6 +57,7 @@ namespace mz {
 		VulkanDevice::SetContextPointer(contextPtr);
 		VulkanSwapChain::SetContextPointer(contextPtr);
 		VulkanPipeline::SetContextPointer(contextPtr);
+		VulkanRenderPass::SetContextPointer(contextPtr);
 	}
 
 	bool VulkanRendererBackend::Initialize()
@@ -173,7 +174,6 @@ namespace mz {
 		}
 
 		// Main render pass
-		m_mainRenderPass = std::make_unique<VulkanRenderPass>(contextPtr);
 		if (!m_mainRenderPass->Create()) {
 			MZ_CORE_CRITICAL("Failed to create main render pass");
 			return false;

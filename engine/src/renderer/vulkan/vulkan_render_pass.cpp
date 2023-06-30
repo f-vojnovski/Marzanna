@@ -1,17 +1,12 @@
 #include "vulkan_render_pass.h"
 
 namespace mz {
-	VulkanRenderPass::VulkanRenderPass(std::shared_ptr<VulkanContext> contextPtr)
-	{
-        this->contextPtr = contextPtr;
-	}
-
 	bool VulkanRenderPass::Create()
 	{
 		MZ_CORE_TRACE("Creating render pass...");
 
         VkAttachmentDescription colorAttachment{};
-        colorAttachment.format = contextPtr->swapChain.surfaceFormat.format;
+        colorAttachment.format = s_contextPtr->swapChain.surfaceFormat.format;
         colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
         colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
         colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -21,7 +16,7 @@ namespace mz {
         colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
         VkAttachmentDescription depthAttachment{};
-        depthAttachment.format = contextPtr->device.depthFormat;
+        depthAttachment.format = s_contextPtr->device.depthFormat;
         depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
         depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
         depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
@@ -65,7 +60,7 @@ namespace mz {
         renderPassInfo.dependencyCount = 1;
         renderPassInfo.pDependencies = &dependency;
 
-		if (vkCreateRenderPass(contextPtr->device.logicalDevice, &renderPassInfo, contextPtr->allocator, &contextPtr->mainRenderPass.handle) != VK_SUCCESS) {
+		if (vkCreateRenderPass(s_contextPtr->device.logicalDevice, &renderPassInfo, s_contextPtr->allocator, &s_contextPtr->mainRenderPass.handle) != VK_SUCCESS) {
 			MZ_CORE_ERROR("Failed to create render pass");
 			return false;
 		}
@@ -75,18 +70,18 @@ namespace mz {
 	void VulkanRenderPass::Destroy()
 	{
 		MZ_CORE_TRACE("Destroying render pass...");
-		vkDestroyRenderPass(contextPtr->device.logicalDevice, contextPtr->mainRenderPass.handle, contextPtr->allocator);
+		vkDestroyRenderPass(s_contextPtr->device.logicalDevice, s_contextPtr->mainRenderPass.handle, s_contextPtr->allocator);
 	}
     
     void VulkanRenderPass::Begin(VkCommandBuffer commandBuffer, uint32_t imageIndex)
     {
         VkRenderPassBeginInfo renderPassInfo{};
         renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-        renderPassInfo.renderPass = contextPtr->mainRenderPass.handle;
-        renderPassInfo.framebuffer = contextPtr->swapChain.framebuffers[imageIndex];
+        renderPassInfo.renderPass = s_contextPtr->mainRenderPass.handle;
+        renderPassInfo.framebuffer = s_contextPtr->swapChain.framebuffers[imageIndex];
 
         renderPassInfo.renderArea.offset = { 0, 0 };
-        renderPassInfo.renderArea.extent = contextPtr->swapChain.extent;
+        renderPassInfo.renderArea.extent = s_contextPtr->swapChain.extent;
 
         std::array<VkClearValue, 2> clearValues{};
         clearValues[0].color = {{0.0f, 0.0f, 0.0f, 1.0f}};
