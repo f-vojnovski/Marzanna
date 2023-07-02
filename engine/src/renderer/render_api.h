@@ -3,6 +3,7 @@
 #include "renderer_backend.h"
 #include "engine/src/mzpch.h"
 #include "geometry.h"
+#include "engine/src/system/geometry_system.h"
 
 namespace mz {
 	enum class RenderApiType {
@@ -24,7 +25,6 @@ namespace mz {
 		inline RenderApiType GetType() { return RenderApiType::Vulkan; }
 	private:
 		std::unique_ptr<RendererBackend> m_rendererBackend;
-
 
 		Geometry* testGeometry1;
 		const std::vector<Vertex3d> vertices1 = {
@@ -113,5 +113,7 @@ namespace mz {
 			0,  1,  2,  0,  3,  1,  4,  5,  6,  4,  7,  5,  8,  9,  10, 8,  11, 9,
 			12, 13, 14, 12, 15, 13, 16, 17, 18, 16, 19, 17, 20, 21, 22, 20, 23, 21
 		};
+
+		GeometrySystem geometrySystem;
 	};
 }

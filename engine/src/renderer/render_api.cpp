@@ -24,6 +24,9 @@ namespace mz {
 		testGeometry1 = Geometry::Create(vertices1, indices1);
 		testGeometry2 = Geometry::Create(vertices2, indices2);
 		
+		// Test geometry system
+		geometrySystem.Acquire("shuttle.obj");
+
 		return true;
 	}
 
@@ -35,6 +38,7 @@ namespace mz {
 	void RenderAPI::Shutdown() {
 		delete testGeometry1;
 		delete testGeometry2;
+		geometrySystem.Shutdown();
 		m_rendererBackend->Shutdown();
 	}
 	
@@ -43,8 +47,9 @@ namespace mz {
 			RendererGlobalState globalState = {};
 			RendererGeometryData geometryData = {};
 			m_rendererBackend->UpdateGlobalState(globalState);
-			testGeometry1->Draw();
-			testGeometry2->Draw();
+			//testGeometry1->Draw();
+			//testGeometry2->Draw();
+			geometrySystem.DrawGeometries();
 			return m_rendererBackend->EndFrame();
 		}
 	}

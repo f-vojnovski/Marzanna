@@ -104,6 +104,9 @@ add_dependencies(demo Shaders)
 # Copy textures to the build directory
 file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/assets/textures" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/assets")
 
+# Copy geometries to the build directory
+file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/assets/models" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/assets")
+
 # TODO: Enable in production only
 # add_subdirectory("engine")
 # install(TARGETS demo)
