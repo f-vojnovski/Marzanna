@@ -16,6 +16,8 @@ namespace mz {
 		static void TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
 		static void CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
 		static VkImageView CreateImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
+		static void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
+
 	private:
 		inline static std::shared_ptr<VulkanContext> s_contextPtr = nullptr;
 	};

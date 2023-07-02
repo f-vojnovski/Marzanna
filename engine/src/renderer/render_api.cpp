@@ -19,6 +19,11 @@ namespace mz {
 			return false;
 		}
 		MZ_CORE_INFO("Created renderer backend!");
+
+		// Create test geometry
+		testGeometry1 = Geometry::Create(vertices1, indices1);
+		testGeometry2 = Geometry::Create(vertices2, indices2);
+		
 		return true;
 	}
 
@@ -28,6 +33,8 @@ namespace mz {
 	}
 
 	void RenderAPI::Shutdown() {
+		delete testGeometry1;
+		delete testGeometry2;
 		m_rendererBackend->Shutdown();
 	}
 	
@@ -36,7 +43,8 @@ namespace mz {
 			RendererGlobalState globalState = {};
 			RendererGeometryData geometryData = {};
 			m_rendererBackend->UpdateGlobalState(globalState);
-			m_rendererBackend->DrawGeometries(geometryData);
+			testGeometry1->Draw();
+			testGeometry2->Draw();
 			return m_rendererBackend->EndFrame();
 		}
 	}

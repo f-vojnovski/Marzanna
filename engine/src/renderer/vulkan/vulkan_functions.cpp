@@ -232,4 +232,15 @@ namespace mz {
 
 		return imageView;
 	}
+	
+	void VulkanFunctions::CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
+	{
+		VkCommandBuffer commandBuffer = VulkanFunctions::BeginSingleUseCommands();
+
+		VkBufferCopy copyRegion{};
+		copyRegion.size = size;
+		vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
+
+		VulkanFunctions::EndSingleTimeCommands(commandBuffer);
+	}
 }

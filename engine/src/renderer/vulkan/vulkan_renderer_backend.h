@@ -19,7 +19,6 @@ namespace mz {
 		virtual bool EndFrame() override;
 		virtual void OnResize() override;
 		virtual void UpdateGlobalState(RendererGlobalState globalState) override;
-		virtual void DrawGeometries(RendererGeometryData geometryData) override;
 	private:
 		bool m_isMinimized = false;
 		std::shared_ptr<VulkanContext> contextPtr;
@@ -36,10 +35,7 @@ namespace mz {
 			void* user_data);
 
 		bool CreateCommandBuffers();
-		bool CreateVertexBuffer();
-		bool CreateIndexBuffer();
 		bool CreateUniformBuffer();
-		void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 		bool CreateDescriptorSetLayout();
 		bool CreateDescriptorPool();
 		bool CreateDescriptorSets();

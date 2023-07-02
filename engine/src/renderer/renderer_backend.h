@@ -2,6 +2,7 @@
 
 #include "engine/src/mzpch.h"
 #include "engine/src/core/window.h"
+#include "render_types.h"
 
 namespace mz {
 	struct RendererBackendArgs {
@@ -14,7 +15,6 @@ namespace mz {
 	};
 
 	struct RendererGeometryData {
-
 	};
 
 	class RendererBackend {
@@ -27,7 +27,6 @@ namespace mz {
 		virtual bool EndFrame() = 0;
 		virtual void OnResize() = 0;
 		virtual void UpdateGlobalState(RendererGlobalState globalState) = 0;
-		virtual void DrawGeometries(RendererGeometryData geometryData) = 0;
 		inline virtual ~RendererBackend() {}
 	};
 }

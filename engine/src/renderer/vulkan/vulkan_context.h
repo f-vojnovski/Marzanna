@@ -96,12 +96,6 @@ namespace mz {
 		VulkanPipelineInfo graphicsRenderingPipeline;
 
 		std::vector<VkCommandBuffer> commandBuffers;
-		
-		VkBuffer vertexBuffer;
-		VkDeviceMemory vertexBufferMemory;
-
-		VkBuffer indexBuffer;
-		VkDeviceMemory indexBufferMemory;
 
 		uint32_t currentFrame = 0;
 		bool framebufferResized = false;
@@ -109,5 +103,8 @@ namespace mz {
 		std::vector<UniformBuffer> uniformBuffers;
 
 		VkSampler textureSampler;
+
+		uint64_t vertexBufferOffset;
+		uint64_t indexBufferOffset;
 	};
 }
