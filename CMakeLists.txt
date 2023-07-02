@@ -26,6 +26,7 @@ find_package(Vulkan REQUIRED)
 
 add_subdirectory(engine/vendor/glfw)
 add_subdirectory(engine/vendor/glm)
+add_subdirectory(engine/vendor/tinyobjloader)
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     if(MSVC)
@@ -58,6 +59,7 @@ target_include_directories(demo PRIVATE
 
 target_link_libraries(demo PRIVATE
     glfw
+    tinyobjloader
     ${Vulkan_LIBRARIES}
 )
 
