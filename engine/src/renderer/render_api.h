@@ -4,6 +4,7 @@
 #include "engine/src/mzpch.h"
 #include "geometry.h"
 #include "engine/src/system/geometry_system.h"
+#include "perspective_camera.h"
 
 namespace mz {
 	enum class RenderApiType {
@@ -115,5 +116,7 @@ namespace mz {
 		};
 
 		GeometrySystem geometrySystem;
+
+		PerspectiveCamera* testCamera;
 	};
 }

@@ -11,7 +11,8 @@ namespace mz {
 	};
 
 	struct RendererGlobalState {
-	
+		glm::mat4 view;
+		glm::mat4 projection;
 	};
 
 	struct RendererGeometryData {

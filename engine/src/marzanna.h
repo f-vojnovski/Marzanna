@@ -33,6 +33,8 @@
 #include "renderer/render_types.h"
 #include "renderer/geometry.h"
 #include "renderer/geometry.cpp"
+#include "renderer/perspective_camera.h"
+#include "renderer/perspective_camera.cpp"
 #include "renderer/vulkan/vulkan_context.h"
 #include "renderer/vulkan/vulkan_renderer_backend.h"
 #include "renderer/vulkan/vulkan_renderer_backend.cpp"

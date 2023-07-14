@@ -27,6 +27,9 @@ namespace mz {
 		// Test geometry system
 		geometrySystem.Acquire("shuttle.obj");
 
+		// Create a perspective camera
+		testCamera = new PerspectiveCamera(45.0f, 800.0f / 600.0f, 0.1f, 100.0f);
+
 		return true;
 	}
 
@@ -46,10 +49,13 @@ namespace mz {
 		if (m_rendererBackend->BeginFrame()) {
 			RendererGlobalState globalState = {};
 			RendererGeometryData geometryData = {};
+
+			globalState.projection = testCamera->GetProjectionMatrix();
+			globalState.view = testCamera->GetViewMatrix();
 			m_rendererBackend->UpdateGlobalState(globalState);
-			//testGeometry1->Draw();
+			testGeometry1->Draw();
 			//testGeometry2->Draw();
-			geometrySystem.DrawGeometries();
+			//geometrySystem.DrawGeometries();
 			return m_rendererBackend->EndFrame();
 		}
 	}
