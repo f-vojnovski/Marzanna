@@ -12,6 +12,7 @@ namespace mz {
 	struct Vertex3d {
 		glm::vec3 pos;
 		glm::vec3 color;
+		glm::vec3 normal;
 		glm::vec2 texCoord;
 
 		bool operator==(const Vertex3d& other) const {

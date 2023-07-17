@@ -15,7 +15,7 @@ namespace mz {
 		static std::array<VkVertexInputAttributeDescription, 2> Vertex2dGetAttributeDescriptions();
 
 		static 	VkVertexInputBindingDescription VulkanPipeline::Vertex3dGetBindingDescription();
-		static std::array<VkVertexInputAttributeDescription, 3> Vertex3dGetAttributeDescriptions();
+		static std::array<VkVertexInputAttributeDescription, 4> Vertex3dGetAttributeDescriptions();
 	
 		inline static void SetContextPointer(std::shared_ptr<VulkanContext> contextPtr) { s_contextPtr = contextPtr; }
 	private:

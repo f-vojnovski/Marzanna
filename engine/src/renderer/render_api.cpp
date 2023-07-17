@@ -25,7 +25,7 @@ namespace mz {
 		testGeometry2 = Geometry::Create(vertices2, indices2);
 		
 		// Test geometry system
-		geometrySystem.Acquire("shuttle.obj");
+		geometrySystem.Acquire("handgun.obj");
 
 		// Create a perspective camera
 		testCamera = new PerspectiveCamera(45.0f, 800.0f / 600.0f, 0.1f, 100.0f);
@@ -54,8 +54,8 @@ namespace mz {
 			globalState.view = testCamera->GetViewMatrix();
 			m_rendererBackend->UpdateGlobalState(globalState);
 			testGeometry1->Draw();
+			geometrySystem.DrawGeometries();
 			//testGeometry2->Draw();
-			//geometrySystem.DrawGeometries();
 			return m_rendererBackend->EndFrame();
 		}
 	}
