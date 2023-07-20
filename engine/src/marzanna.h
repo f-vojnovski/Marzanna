@@ -14,6 +14,8 @@
 #include "core/input.h"
 #include "core/input_keycodes.h"
 #include "core/utils.h"
+#include "core/uuid.h"
+#include "core/uuid.cpp"
 #include "system/file_reader.h"
 #include "system/file_reader.cpp"
 #include "system/texture_system.h"

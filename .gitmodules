@@ -13,3 +13,6 @@
 [submodule "engine/vendor/tinyobjloader"]
 	path = engine/vendor/tinyobjloader
 	url = https://github.com/tinyobjloader/tinyobjloader
+[submodule "engine/vendor/entt"]
+	path = engine/vendor/entt
+	url = https://github.com/skypjack/entt

@@ -27,6 +27,7 @@ find_package(Vulkan REQUIRED)
 add_subdirectory(engine/vendor/glfw)
 add_subdirectory(engine/vendor/glm)
 add_subdirectory(engine/vendor/tinyobjloader)
+add_subdirectory(engine/vendor/entt)
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     if(MSVC)
@@ -52,6 +53,7 @@ target_include_directories(demo PRIVATE
     engine/vendor/spdlog/include 
     engine/vendor/glfw/include
     engine/vendor/stb
+    engine/vendor/entt/single_include/entt
     glm::glm
     "${PROJECT_SOURCE_DIR}"
     ${Vulkan_INCLUDE_DIRS}
