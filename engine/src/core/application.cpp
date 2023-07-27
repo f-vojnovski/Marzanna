@@ -24,6 +24,10 @@ namespace mz {
 
 		m_textureSystem = std::make_unique<TextureSystem>();
 		m_textureSystem->Acquire("vapor.png");
+
+		m_geometrySystem = std::make_unique<GeometrySystem>();
+
+		m_activeScene = std::make_unique<Scene>();
 	}
 
 	Application::~Application()
@@ -36,7 +40,7 @@ namespace mz {
 			if (m_isSuspended) continue;
 
 			m_window->OnUpdate();
-			m_renderApi->DrawFrame();
+			m_activeScene->OnGraphicsUpdate();
 
 			for (Layer* layer : m_layerStack) {
 				layer->OnUpdate();
@@ -48,6 +52,7 @@ namespace mz {
 	}
 	void Application::Shutdown()
 	{
+		m_geometrySystem->Shutdown();
 		m_textureSystem->Shutdown();
 		m_renderApi->Shutdown();
 	}

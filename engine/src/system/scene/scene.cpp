@@ -1,5 +1,6 @@
 #include "scene.h"
 #include "entity.h"
+#include "engine/src/renderer/render_api.h"
 
 namespace mz {
 	Scene::Scene()
@@ -30,5 +31,21 @@ namespace mz {
 	{
 		m_entityMap.erase(entity.GetUUID());
 		m_registry.destroy(entity);
+	}
+	
+	void Scene::OnGraphicsUpdate()
+	{
+		RenderApiDrawCallArgs drawArgs;
+
+		auto group = m_registry.group<Transform3dComponent>(entt::get<GeometryRendererComponent>);
+		for (auto entity : group)
+		{
+			auto [transform, geometry] = group.get<Transform3dComponent, GeometryRendererComponent>(entity);
+
+			GeometryWithPosition geometryInWorldSpace;
+			geometryInWorldSpace.geometry = geometry.geometry;
+			drawArgs.geometries.push_back(geometryInWorldSpace);
+		}
+		Application::Get().GetRenderApi().DrawFrame(drawArgs);
 	}
 }

@@ -6,9 +6,19 @@ namespace mz {
 	GeometrySystem::GeometrySystem()
 	{
 	}
-	std::shared_ptr<Geometry> GeometrySystem::Acquire(std::string name)
+	const Geometry* GeometrySystem::Acquire(std::string name)
 	{
-		LoadObjGeometry(name);
+		auto it = m_geometries.find(name);
+
+		if (it == m_geometries.end()) {
+			LoadObjGeometry(name);
+			it = m_geometries.find(name);
+		}
+
+		if (it != m_geometries.end()) {
+			return it->second;
+		}
+
 		return nullptr;
 	}
 

@@ -7,7 +7,7 @@ namespace mz {
 	class GeometrySystem {
 	public:
 		GeometrySystem();
-		std::shared_ptr<Geometry> Acquire(std::string name);
+		const Geometry* Acquire(std::string name);
 		void Destroy(std::string name);
 		void Shutdown();
 		void DrawGeometries();

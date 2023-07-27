@@ -44,7 +44,7 @@ namespace mz {
 
 	struct GeometryRendererComponent
 	{
-		std::shared_ptr<Geometry> geometry;
+		const Geometry* geometry;
 
 		GeometryRendererComponent() = default;
 		GeometryRendererComponent(const GeometryRendererComponent&) = default;

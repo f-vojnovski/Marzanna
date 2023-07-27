@@ -11,6 +11,7 @@ namespace mz {
 
 	class TextureSystem {
 	public:
+		TextureSystem() = default;
 		std::shared_ptr<Texture> Acquire(std::string name);
 		bool Destroy(std::string name);
 		void Shutdown();

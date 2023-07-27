@@ -5,6 +5,7 @@
 #include "engine/src/platform/windows_window.h"
 #include "engine/src/core/layer_stack.h"
 #include "engine/src/renderer/render_api.h"
+#include "engine/src/system/scene/scene.h"
 #include "engine/src/system/texture_system.h"
 
 namespace mz {
@@ -23,6 +24,13 @@ namespace mz {
 		inline static Application& Get() { return *s_Instance; }
 		inline Window& GetWindow() { return *m_window; }
 		inline RenderApiType GetRenderApiType() { return m_renderApi->GetType(); }
+		inline RenderAPI& GetRenderApi() { return *m_renderApi; }
+		
+		std::shared_ptr<Scene> m_activeScene;
+
+	protected:
+		std::unique_ptr<GeometrySystem> m_geometrySystem;
+
 	private:
 		bool m_isRunning = true;
 		bool m_isSuspended = false;

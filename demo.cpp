@@ -18,6 +18,16 @@ class TestApplication : public mz::Application {
 public:
 	TestApplication() : Application() {
 		PushLayer(new ExampleLayer());
+
+		auto entity = m_activeScene->CreateEntity("entity 1");
+		
+		mz::GeometryRendererComponent entityGeometryComponent;
+		entityGeometryComponent.geometry = m_geometrySystem->Acquire("handgun.obj");
+		entity.AddComponent<mz::GeometryRendererComponent>(entityGeometryComponent);
+
+		mz::Transform3dComponent entityTransformComponent;
+		entity.AddComponent<mz::Transform3dComponent>(entityTransformComponent);
+
 	}
 	~TestApplication() {
 

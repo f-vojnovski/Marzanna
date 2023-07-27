@@ -16,12 +16,21 @@ namespace mz {
 		const Window* window;
 	};
 
+	struct GeometryWithPosition {
+		const Geometry* geometry;
+		// position
+	};
+
+	struct RenderApiDrawCallArgs {
+		std::vector<GeometryWithPosition> geometries;
+	};
+
 	class RenderAPI {
 	public:
 		RenderAPI(const RenderApiArgs args);
 		bool Initialize();
 		void Shutdown();
-		bool DrawFrame();
+		bool DrawFrame(RenderApiDrawCallArgs args);
 		void OnResize();
 		inline RenderApiType GetType() { return RenderApiType::Vulkan; }
 	private:
@@ -114,8 +123,6 @@ namespace mz {
 			0,  1,  2,  0,  3,  1,  4,  5,  6,  4,  7,  5,  8,  9,  10, 8,  11, 9,
 			12, 13, 14, 12, 15, 13, 16, 17, 18, 16, 19, 17, 20, 21, 22, 20, 23, 21
 		};
-
-		GeometrySystem geometrySystem;
 
 		PerspectiveCamera* testCamera;
 	};

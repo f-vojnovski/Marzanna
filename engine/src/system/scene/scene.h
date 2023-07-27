@@ -2,6 +2,7 @@
 
 #include "engine/src/mzpch.h"
 #include "engine/src/renderer/render_api.h"
+#include "engine/src/core/uuid.h"
 
 namespace mz {
 	// forward declaration
