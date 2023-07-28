@@ -26,7 +26,9 @@ public:
 		entity.AddComponent<mz::GeometryRendererComponent>(entityGeometryComponent);
 
 		mz::Transform3dComponent entityTransformComponent;
+		entityTransformComponent.Translation = glm::vec3(0.0f, 1.0f, 0.3f);
 		entity.AddComponent<mz::Transform3dComponent>(entityTransformComponent);
+
 
 	}
 	~TestApplication() {

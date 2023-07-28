@@ -18,7 +18,7 @@ namespace mz {
 
 	struct GeometryWithPosition {
 		const Geometry* geometry;
-		// position
+		glm::mat4 model;
 	};
 
 	struct RenderApiDrawCallArgs {

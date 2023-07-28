@@ -30,7 +30,7 @@ namespace mz {
 		vkFreeMemory(s_contextPtr->device.logicalDevice, vertexBufferMemory, s_contextPtr->allocator);
 	}
 
-	void VulkanGeometry::Draw() const
+	void VulkanGeometry::Draw(glm::mat4 model) const
 	{
 		VkCommandBuffer commandBuffer = s_contextPtr->commandBuffers[s_contextPtr->currentFrame];
 
@@ -39,6 +39,8 @@ namespace mz {
 		vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
 
 		vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+		
+		vkCmdPushConstants(commandBuffer, s_contextPtr->graphicsRenderingPipeline.layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &model);
 
 		vkCmdDrawIndexed(commandBuffer, indexCount, 1, 0, 0, 0);
 	}

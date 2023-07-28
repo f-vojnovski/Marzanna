@@ -50,11 +50,11 @@ namespace mz {
 			globalState.view = testCamera->GetViewMatrix();
 
 			for (GeometryWithPosition geometryToDraw : args.geometries) {
-				geometryToDraw.geometry->Draw();
+				geometryToDraw.geometry->Draw(geometryToDraw.model);
 			}
 
 			m_rendererBackend->UpdateGlobalState(globalState);
-			testGeometry1->Draw();
+			//testGeometry1->Draw();
 			//testGeometry2->Draw();
 			return m_rendererBackend->EndFrame();
 		}

@@ -10,7 +10,7 @@ namespace mz {
 		VulkanGeometry(std::vector<Vertex3d> vertices, std::vector<uint32_t> indices);
 		~VulkanGeometry();
 		inline static void SetContextPointer(std::shared_ptr<VulkanContext> contextPtr) { s_contextPtr = contextPtr; }
-		virtual void Draw() const override;
+		virtual void Draw(glm::mat4 model) const override;
 	private:
 		inline static std::shared_ptr<VulkanContext> s_contextPtr = nullptr;
 

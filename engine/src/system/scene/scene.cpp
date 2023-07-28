@@ -44,6 +44,7 @@ namespace mz {
 
 			GeometryWithPosition geometryInWorldSpace;
 			geometryInWorldSpace.geometry = geometry.geometry;
+			geometryInWorldSpace.model = transform.GetTransform();
 			drawArgs.geometries.push_back(geometryInWorldSpace);
 		}
 		Application::Get().GetRenderApi().DrawFrame(drawArgs);

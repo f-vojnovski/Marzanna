@@ -48,14 +48,6 @@ namespace mz {
 		m_geometries.clear();
 	}
 
-	void GeometrySystem::DrawGeometries()
-	{
-		for (auto& pair : m_geometries)
-		{
-			pair.second->Draw();
-		}
-	}
-
 	bool GeometrySystem::LoadObjGeometry(std::string name)
 	{
 		std::string filePath = "assets/models/" + name;
