@@ -6,7 +6,6 @@
 #include "engine/src/core/layer_stack.h"
 #include "engine/src/renderer/render_api.h"
 #include "engine/src/system/scene/scene.h"
-#include "engine/src/system/texture_system.h"
 
 namespace mz {
 	class Application {
@@ -45,7 +44,6 @@ namespace mz {
 		LayerStack m_layerStack;
 
 		std::unique_ptr<RenderAPI> m_renderApi;
-		std::unique_ptr<TextureSystem> m_textureSystem;
 
 		static Application* s_Instance;
 	};

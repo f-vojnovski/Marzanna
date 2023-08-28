@@ -22,9 +22,6 @@ namespace mz {
 
 		m_renderApi->Initialize();
 
-		m_textureSystem = std::make_unique<TextureSystem>();
-		m_textureSystem->Acquire("vapor.png");
-
 		m_geometrySystem = std::make_unique<GeometrySystem>();
 
 		m_activeScene = std::make_unique<Scene>();
@@ -53,7 +50,6 @@ namespace mz {
 	void Application::Shutdown()
 	{
 		m_geometrySystem->Shutdown();
-		m_textureSystem->Shutdown();
 		m_renderApi->Shutdown();
 	}
 
