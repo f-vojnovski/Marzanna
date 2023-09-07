@@ -28,8 +28,6 @@ namespace mz {
 		std::unique_ptr<VulkanPipeline> m_pipeline;
 		std::unique_ptr<VulkanRenderPass> m_mainRenderPass;
 
-		Texture* testTexture;
-
 		static VKAPI_ATTR VkBool32 VKAPI_CALL VulkanDebugCallback(
 			VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
 			VkDebugUtilsMessageTypeFlagsEXT message_types,
@@ -40,7 +38,6 @@ namespace mz {
 		bool CreateUniformBuffer();
 		bool CreateDescriptorSetLayout();
 		bool CreateDescriptorPool();
-		bool CreateDescriptorSets();
 		bool CreateTextureSampler();
 	};
 }

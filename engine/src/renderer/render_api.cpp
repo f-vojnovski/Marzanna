@@ -21,8 +21,8 @@ namespace mz {
 		MZ_CORE_INFO("Created renderer backend!");
 
 		// Create test geometry
-		testGeometry1 = Geometry::Create(vertices1, indices1);
-		testGeometry2 = Geometry::Create(vertices2, indices2);
+		/*testGeometry1 = Geometry::Create(vertices1, indices1);
+		testGeometry2 = Geometry::Create(vertices2, indices2);*/
 		
 		// Create a perspective camera
 		testCamera = new PerspectiveCamera(45.0f, 800.0f / 600.0f, 0.1f, 100.0f);
@@ -36,8 +36,8 @@ namespace mz {
 	}
 
 	void RenderAPI::Shutdown() {
-		delete testGeometry1;
-		delete testGeometry2;
+		//delete testGeometry1;
+		//delete testGeometry2;
 		m_rendererBackend->Shutdown();
 	}
 	

@@ -72,7 +72,6 @@ namespace mz {
 		VkPipeline handle;
 		VkDescriptorSetLayout descriptorSetLayout;
 		VkDescriptorPool descriptorPool;
-		std::vector<VkDescriptorSet> descriptorSets;
 	};
 
 	struct UniformBuffer {

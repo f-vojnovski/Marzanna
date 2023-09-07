@@ -151,7 +151,9 @@ namespace mz {
 		}
 
 		// Framebuffers
-		m_swapChain->CreateFramebuffers();
+		if (!m_swapChain->CreateFramebuffers()) {
+			return false;
+		}
 
 		// Command pool
 		if (!m_device->CreateGraphicsCommandPool()) {
@@ -183,12 +185,6 @@ namespace mz {
 			return false;
 		}
 
-		// Descriptor sets
-		if (!CreateDescriptorSets()) {
-			MZ_CORE_CRITICAL("Failed to create descriptor sets!");
-			return false;
-		}
-
 		// Sync objects
 		if (!m_swapChain->CreateSyncObjects()) {
 			MZ_CORE_CRITICAL("Failed to create swap chain sync objects!");
@@ -202,8 +198,6 @@ namespace mz {
 	{
 		vkDeviceWaitIdle(contextPtr->device.logicalDevice);
 	
-		delete testTexture;
-
 		// Sync objects
 		m_swapChain->DestroySyncObjects();
 
@@ -308,16 +302,6 @@ namespace mz {
 		m_mainRenderPass->Begin(commandBuffer, imageIndex);
 
 		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, contextPtr->graphicsRenderingPipeline.handle);
-
-		vkCmdBindDescriptorSets(
-			commandBuffer,
-			VK_PIPELINE_BIND_POINT_GRAPHICS,
-			contextPtr->graphicsRenderingPipeline.layout,
-			0,
-			1,
-			&contextPtr->graphicsRenderingPipeline.descriptorSets[contextPtr->currentFrame],
-			0,
-			nullptr);
 
 		return true;
 	}
@@ -480,58 +464,6 @@ namespace mz {
 			return false;
 		}
 
-		return true;
-	}
-
-	
-	bool VulkanRendererBackend::CreateDescriptorSets()
-	{
-		std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, contextPtr->graphicsRenderingPipeline.descriptorSetLayout);
-		VkDescriptorSetAllocateInfo allocInfo{};
-		allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-		allocInfo.descriptorPool = contextPtr->graphicsRenderingPipeline.descriptorPool;
-		allocInfo.descriptorSetCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
-		allocInfo.pSetLayouts = layouts.data();
-
-		contextPtr->graphicsRenderingPipeline.descriptorSets.resize(MAX_FRAMES_IN_FLIGHT);
-		if (vkAllocateDescriptorSets(contextPtr->device.logicalDevice, &allocInfo, contextPtr->graphicsRenderingPipeline.descriptorSets.data()) != VK_SUCCESS) {
-			return false;
-		}
-
- 		Texture::LoadTexture("vapor.png", &testTexture);
-		VulkanTexture* vulkanTexturePtr = static_cast<VulkanTexture*>(testTexture);
-
-		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-			VkDescriptorBufferInfo bufferInfo{};
-			bufferInfo.buffer = contextPtr->uniformBuffers[i].handle;
-			bufferInfo.offset = 0;
-			bufferInfo.range = sizeof(UniformBufferObject);
-
-			VkDescriptorImageInfo imageInfo{};
-			imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-			imageInfo.imageView = vulkanTexturePtr->GetImageView();
-			imageInfo.sampler = contextPtr->textureSampler;
-
-			std::array<VkWriteDescriptorSet, 2> descriptorWrites{};
-
-			descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-			descriptorWrites[0].dstSet = contextPtr->graphicsRenderingPipeline.descriptorSets[i];
-			descriptorWrites[0].dstBinding = 0;
-			descriptorWrites[0].dstArrayElement = 0;
-			descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-			descriptorWrites[0].descriptorCount = 1;
-			descriptorWrites[0].pBufferInfo = &bufferInfo;
-
-			descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-			descriptorWrites[1].dstSet = contextPtr->graphicsRenderingPipeline.descriptorSets[i];
-			descriptorWrites[1].dstBinding = 1;
-			descriptorWrites[1].dstArrayElement = 0;
-			descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-			descriptorWrites[1].descriptorCount = 1;
-			descriptorWrites[1].pImageInfo = &imageInfo;
-
-			vkUpdateDescriptorSets(contextPtr->device.logicalDevice, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
-		}
 		return true;
 	}
 

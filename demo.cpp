@@ -29,8 +29,17 @@ public:
 		entityTransformComponent.Translation = glm::vec3(0.0f, 1.0f, 0.3f);
 		entity.AddComponent<mz::Transform3dComponent>(entityTransformComponent);
 
+		//auto entity2 = m_activeScene->CreateEntity("entity 2");
 
+		//mz::GeometryRendererComponent entity2GeometryComponent;
+		//entity2GeometryComponent.geometry = m_geometrySystem->Acquire("handgun.obj");
+		//entity2.AddComponent<mz::GeometryRendererComponent>(entity2GeometryComponent);
+
+		//mz::Transform3dComponent entity2TransformComponent;
+		//entity2TransformComponent.Translation = glm::vec3(0.2f, 1.7f, 0.3f);
+		//entity2.AddComponent<mz::Transform3dComponent>(entity2TransformComponent);
 	}
+
 	~TestApplication() {
 
 	}

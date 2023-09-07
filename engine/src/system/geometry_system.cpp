@@ -109,7 +109,7 @@ namespace mz {
 			}
 		}
 
-		Geometry* newGeometry = Geometry::Create(vertices, indices);
+		Geometry* newGeometry = Geometry::Create(vertices, indices, "vapor.png");
 		m_geometries.emplace(name, newGeometry);
 	}
 }
