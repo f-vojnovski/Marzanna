@@ -11,7 +11,9 @@ namespace mz {
 		auto it = m_geometries.find(name);
 
 		if (it == m_geometries.end()) {
-			LoadObjGeometry(name);
+			if (!LoadGeometryAssimp(name)) {
+				return nullptr;
+			}
 			it = m_geometries.find(name);
 		}
 
@@ -111,5 +113,84 @@ namespace mz {
 
 		Geometry* newGeometry = Geometry::Create(vertices, indices, "vapor.png");
 		m_geometries.emplace(name, newGeometry);
+	}
+
+	bool GeometrySystem::LoadGeometryAssimp(std::string name) {
+		std::string filePath = "assets/models/" + name;
+
+		std::vector<Vertex3d> vertices;
+		std::vector<uint32_t> indices;
+
+		Assimp::Importer importer;
+		const aiScene* scene = importer.ReadFile(filePath, aiProcess_Triangulate | aiProcess_FlipUVs);
+
+		if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
+			MZ_CORE_ERROR("Assimp failed to load geometry {0}, error: {1}", name, importer.GetErrorString());
+			return false;
+		}
+
+		ProcessNode(scene->mRootNode, scene, vertices, indices);
+
+		// Create your Geometry object (you might need to modify the Geometry::Create function)
+		Geometry* newGeometry = Geometry::Create(vertices, indices, "vapor.png");
+		m_geometries.emplace(name, newGeometry);
+
+		return true;
+	}
+
+	void GeometrySystem::ProcessNode(aiNode* node, const aiScene* scene, std::vector<Vertex3d>& vertices, std::vector<uint32_t>& indices)
+	{
+		for (unsigned int i = 0; i < node->mNumMeshes; ++i) {
+			aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
+			ProcessMesh(mesh, scene, vertices, indices);
+		}
+
+		for (unsigned int i = 0; i < node->mNumChildren; ++i) {
+			ProcessNode(node->mChildren[i], scene, vertices, indices);
+		}
+	}
+
+	void GeometrySystem::ProcessMesh(aiMesh* mesh, const aiScene* scene, std::vector<Vertex3d>& vertices, std::vector<uint32_t>& indices)
+	{
+		for (unsigned int i = 0; i < mesh->mNumVertices; ++i) {
+			Vertex3d vertex{};
+			vertex.pos = {
+				mesh->mVertices[i].x,
+				mesh->mVertices[i].y,
+				mesh->mVertices[i].z
+			};
+
+			if (mesh->HasVertexColors(0)) {
+				vertex.color = {
+					mesh->mColors[0][i].r,
+					mesh->mColors[0][i].g,
+					mesh->mColors[0][i].b
+				};
+			}
+
+			if (mesh->HasNormals()) {
+				vertex.normal = {
+					mesh->mNormals[i].x,
+					mesh->mNormals[i].y,
+					mesh->mNormals[i].z
+				};
+			}
+
+			if (mesh->HasTextureCoords(0)) {
+				vertex.texCoord = {
+					mesh->mTextureCoords[0][i].x,
+					mesh->mTextureCoords[0][i].y
+				};
+			}
+
+			vertices.push_back(vertex);
+		}
+
+		for (unsigned int i = 0; i < mesh->mNumFaces; ++i) {
+			aiFace face = mesh->mFaces[i];
+			for (unsigned int j = 0; j < face.mNumIndices; ++j) {
+				indices.push_back(face.mIndices[j]);
+			}
+		}
 	}
 }

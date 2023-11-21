@@ -22,11 +22,12 @@ public:
 		auto entity = m_activeScene->CreateEntity("entity 1");
 		
 		mz::GeometryRendererComponent entityGeometryComponent;
-		entityGeometryComponent.geometry = m_geometrySystem->Acquire("handgun.obj");
+		entityGeometryComponent.geometry = m_geometrySystem->Acquire("tower2.fbx");
 		entity.AddComponent<mz::GeometryRendererComponent>(entityGeometryComponent);
 
 		mz::Transform3dComponent entityTransformComponent;
-		entityTransformComponent.Translation = glm::vec3(0.0f, 1.0f, 0.3f);
+		entityTransformComponent.Scale = glm::vec3(0.12f, 0.12f, 0.12f);
+		entityTransformComponent.Translation = glm::vec3(0.0f, 0.2f, 0.1f);
 		entity.AddComponent<mz::Transform3dComponent>(entityTransformComponent);
 
 		//auto entity2 = m_activeScene->CreateEntity("entity 2");

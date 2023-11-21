@@ -28,6 +28,7 @@ add_subdirectory(engine/vendor/glfw)
 add_subdirectory(engine/vendor/glm)
 add_subdirectory(engine/vendor/tinyobjloader)
 add_subdirectory(engine/vendor/entt)
+add_subdirectory(engine/vendor/assimp)
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     if(MSVC)
@@ -54,6 +55,7 @@ target_include_directories(demo PRIVATE
     engine/vendor/glfw/include
     engine/vendor/stb
     engine/vendor/entt/single_include/entt
+    engine/vendor/assimp/include/assimp
     glm::glm
     "${PROJECT_SOURCE_DIR}"
     ${Vulkan_INCLUDE_DIRS}
@@ -62,6 +64,7 @@ target_include_directories(demo PRIVATE
 target_link_libraries(demo PRIVATE
     glfw
     tinyobjloader
+    assimp
     ${Vulkan_LIBRARIES}
 )
 
